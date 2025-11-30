@@ -126,6 +126,7 @@ function renderSidebar() {
     { id: 'dashboard', icon: 'fa-chart-line', name: '数据概览' },
     { id: 'team-manage', icon: 'fa-users', name: '团队管理' },
     { id: 'team-report', icon: 'fa-chart-bar', name: '团队报表' },
+    { id: 'game-report', icon: 'fa-gamepad', name: '游戏报表' },
     { id: 'commission', icon: 'fa-percentage', name: '佣金明细' },
     { id: 'account', icon: 'fa-user-cog', name: '账户设置' }
   ];
@@ -134,6 +135,7 @@ function renderSidebar() {
     { id: 'dashboard', icon: 'fa-chart-line', name: '数据概览' },
     { id: 'team-manage', icon: 'fa-users', name: '团队管理' },
     { id: 'team-report', icon: 'fa-chart-bar', name: '团队报表' },
+    { id: 'game-report', icon: 'fa-gamepad', name: '游戏报表' },
     { id: 'commission', icon: 'fa-percentage', name: '佣金明细' },
     { id: 'account', icon: 'fa-user-cog', name: '账户设置' }
   ];
@@ -177,6 +179,9 @@ function showModule(moduleId) {
       break;
     case 'team-report':
       renderTeamReport();
+      break;
+    case 'game-report':
+      renderGameReport();
       break;
     case 'commission':
       renderCommission();
@@ -546,6 +551,8 @@ async function renderPlayersTab() {
             <th class="px-6 py-4 text-left text-sm font-semibold">VIP等级</th>
             <th class="px-6 py-4 text-left text-sm font-semibold">余额</th>
             <th class="px-6 py-4 text-left text-sm font-semibold">本月投注</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold">有效投注</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold">洗码费</th>
             <th class="px-6 py-4 text-left text-sm font-semibold">本月输赢</th>
             <th class="px-6 py-4 text-left text-sm font-semibold">状态</th>
             <th class="px-6 py-4 text-left text-sm font-semibold">操作</th>
@@ -553,7 +560,7 @@ async function renderPlayersTab() {
         </thead>
         <tbody id="players-table-body">
           <tr>
-            <td colspan="8" class="px-6 py-12 text-center text-gray-400">
+            <td colspan="10" class="px-6 py-12 text-center text-gray-400">
               <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
               <div>加载中...</div>
             </td>
@@ -657,7 +664,7 @@ async function loadPlayers(page = 1) {
       if (data.list.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="8" class="px-6 py-12 text-center text-gray-400">
+            <td colspan="10" class="px-6 py-12 text-center text-gray-400">
               <i class="fas fa-inbox text-4xl mb-2"></i>
               <div>暂无数据</div>
             </td>
@@ -682,6 +689,8 @@ async function loadPlayers(page = 1) {
             <div class="font-semibold text-blue-400">¥${formatMoney(item.balance)}</div>
           </td>
           <td class="px-6 py-4 text-gray-300">¥${formatMoney(item.month_bet)}</td>
+          <td class="px-6 py-4 text-blue-400 font-semibold">¥${formatMoney(item.valid_bet || 0)}</td>
+          <td class="px-6 py-4 text-purple-400 font-semibold">¥${formatMoney(item.wash_code_fee || 0)}</td>
           <td class="px-6 py-4">
             <span class="${item.month_profit >= 0 ? 'text-green-400' : 'text-red-400'} font-semibold">
               ¥${formatMoney(Math.abs(item.month_profit))}
@@ -1757,6 +1766,210 @@ function renderTeamReport() {
   document.getElementById('report-end-date').value = today.toISOString().split('T')[0];
   
   loadTeamReport();
+}
+
+// ========================================
+// 游戏报表相关函数
+// ========================================
+
+// 渲染游戏报表
+function renderGameReport() {
+  const content = document.getElementById('main-content');
+  content.innerHTML = `
+    <div class="fade-in">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold">
+          <i class="fas fa-gamepad text-primary mr-3"></i>游戏报表
+        </h2>
+        <button onclick="exportGameReport()" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition">
+          <i class="fas fa-download mr-2"></i>导出报表
+        </button>
+      </div>
+      
+      <!-- 搜索查询栏 -->
+      <div class="bg-gray-800 rounded-xl p-6 mb-6 border border-gray-700">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">日期范围</label>
+            <input type="date" id="game-report-start-date" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-primary">
+          </div>
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">&nbsp;</label>
+            <input type="date" id="game-report-end-date" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-primary">
+          </div>
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">账号搜索</label>
+            <input type="text" id="game-report-search" placeholder="玩家账号/姓名" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-primary">
+          </div>
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">游戏类型</label>
+            <select id="game-report-type" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-primary">
+              <option value="">全部游戏</option>
+              <option value="baccarat">百家乐</option>
+              <option value="roulette">轮盘</option>
+              <option value="sicbo">骰宝</option>
+              <option value="dragontiger">龙虎</option>
+            </select>
+          </div>
+          <div class="flex items-end">
+            <button onclick="searchGameReport()" class="w-full bg-primary hover:bg-blue-700 px-4 py-2 rounded-lg transition">
+              <i class="fas fa-search mr-2"></i>查询
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 统计概览 -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-gray-400 text-sm">总投注额</span>
+            <i class="fas fa-coins text-blue-400"></i>
+          </div>
+          <div class="text-2xl font-bold text-blue-400" id="game-total-bet">¥0.00</div>
+        </div>
+        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-gray-400 text-sm">有效投注</span>
+            <i class="fas fa-check-circle text-green-400"></i>
+          </div>
+          <div class="text-2xl font-bold text-green-400" id="game-valid-bet">¥0.00</div>
+        </div>
+        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-gray-400 text-sm">玩家输赢</span>
+            <i class="fas fa-chart-line text-yellow-400"></i>
+          </div>
+          <div class="text-2xl font-bold" id="game-total-winloss">¥0.00</div>
+        </div>
+        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-gray-400 text-sm">投注笔数</span>
+            <i class="fas fa-list text-purple-400"></i>
+          </div>
+          <div class="text-2xl font-bold text-purple-400" id="game-total-count">0</div>
+        </div>
+      </div>
+      
+      <!-- 数据表格 -->
+      <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+        <table class="w-full">
+          <thead class="bg-gray-700">
+            <tr>
+              <th class="px-6 py-4 text-left text-sm font-semibold">玩家账号</th>
+              <th class="px-6 py-4 text-left text-sm font-semibold">游戏类型</th>
+              <th class="px-6 py-4 text-left text-sm font-semibold">投注额</th>
+              <th class="px-6 py-4 text-left text-sm font-semibold">有效投注</th>
+              <th class="px-6 py-4 text-left text-sm font-semibold">输赢金额</th>
+              <th class="px-6 py-4 text-left text-sm font-semibold">洗码费</th>
+              <th class="px-6 py-4 text-left text-sm font-semibold">投注时间</th>
+              <th class="px-6 py-4 text-left text-sm font-semibold">操作</th>
+            </tr>
+          </thead>
+          <tbody id="game-report-table-body">
+            <tr>
+              <td colspan="8" class="px-6 py-12 text-center text-gray-400">
+                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                <div>加载中...</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- 分页 -->
+      <div id="game-report-pagination" class="mt-6 flex items-center justify-between">
+        <!-- 动态渲染 -->
+      </div>
+    </div>
+  `;
+  
+  loadGameReport();
+}
+
+// 加载游戏报表数据
+async function loadGameReport(page = 1) {
+  try {
+    const startDate = document.getElementById('game-report-start-date')?.value || '';
+    const endDate = document.getElementById('game-report-end-date')?.value || '';
+    const search = document.getElementById('game-report-search')?.value || '';
+    const gameType = document.getElementById('game-report-type')?.value || '';
+    
+    const result = await api(`/api/agent/game-report?page=${page}&start_date=${startDate}&end_date=${endDate}&search=${search}&game_type=${gameType}`);
+    
+    if (result.success) {
+      const tbody = document.getElementById('game-report-table-body');
+      const data = result.data;
+      
+      // 更新统计数据
+      document.getElementById('game-total-bet').textContent = '¥' + formatMoney(data.summary.totalBet);
+      document.getElementById('game-valid-bet').textContent = '¥' + formatMoney(data.summary.validBet);
+      document.getElementById('game-total-winloss').textContent = '¥' + formatMoney(data.summary.totalWinLoss);
+      document.getElementById('game-total-count').textContent = data.summary.totalCount;
+      
+      // 渲染表格
+      if (data.list.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="px-6 py-12 text-center text-gray-400">
+              <i class="fas fa-inbox text-4xl mb-2"></i>
+              <div>暂无数据</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      tbody.innerHTML = data.list.map(item => `
+        <tr class="border-t border-gray-700 hover:bg-gray-750">
+          <td class="px-6 py-4">
+            <div class="font-medium">${makeAccountClickable(item.player_username, item.player_id, 'player')}</div>
+            <div class="text-sm text-gray-400">${escapeHtml(item.player_name || '-')}</div>
+          </td>
+          <td class="px-6 py-4">
+            <span class="px-2 py-1 bg-blue-900 text-blue-300 rounded text-sm">
+              ${item.game_type_display}
+            </span>
+          </td>
+          <td class="px-6 py-4 text-gray-300">¥${formatMoney(item.bet_amount)}</td>
+          <td class="px-6 py-4 text-blue-400 font-semibold">¥${formatMoney(item.valid_bet)}</td>
+          <td class="px-6 py-4">
+            <span class="${item.win_loss >= 0 ? 'text-green-400' : 'text-red-400'} font-semibold">
+              ${item.win_loss >= 0 ? '+' : ''}¥${formatMoney(item.win_loss)}
+            </span>
+          </td>
+          <td class="px-6 py-4 text-purple-400">¥${formatMoney(item.wash_code_fee || 0)}</td>
+          <td class="px-6 py-4 text-sm text-gray-400">${item.bet_time}</td>
+          <td class="px-6 py-4">
+            <button onclick="viewGameDetail('${item.game_id}')" class="text-blue-400 hover:text-blue-300" title="查看详情">
+              <i class="fas fa-eye"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+      
+      // 渲染分页
+      renderPagination('game-report-pagination', data.currentPage, data.totalPages, loadGameReport);
+    }
+  } catch (error) {
+    console.error('Load game report error:', error);
+    showToast('加载游戏报表失败', 'error');
+  }
+}
+
+// 搜索游戏报表
+function searchGameReport() {
+  loadGameReport(1);
+}
+
+// 导出游戏报表
+function exportGameReport() {
+  showToast('游戏报表导出功能开发中...', 'info');
+}
+
+// 查看游戏详情
+function viewGameDetail(gameId) {
+  showToast(`查看游戏 ${gameId} 详情功能开发中...`, 'info');
 }
 
 // 渲染佣金明细

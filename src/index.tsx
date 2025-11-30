@@ -7418,6 +7418,8 @@ app.get('/api/agent/players', async (c) => {
           vip_level: 3,
           balance: 15800,
           month_bet: 125000,
+          valid_bet: 118750, // 有效投注 (95% of total bet)
+          wash_code_fee: 2375, // 洗码费 (2% of valid bet)
           month_profit: -8500,
           status: 'active'
         },
@@ -7429,6 +7431,8 @@ app.get('/api/agent/players', async (c) => {
           vip_level: 2,
           balance: 8200,
           month_bet: 68000,
+          valid_bet: 64600, // 有效投注
+          wash_code_fee: 1292, // 洗码费
           month_profit: 3200,
           status: 'active'
         },
@@ -7440,6 +7444,8 @@ app.get('/api/agent/players', async (c) => {
           vip_level: 1,
           balance: 500,
           month_bet: 12000,
+          valid_bet: 11400, // 有效投注
+          wash_code_fee: 228, // 洗码费
           month_profit: -500,
           status: 'inactive'
         }
