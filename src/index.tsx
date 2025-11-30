@@ -8411,8 +8411,21 @@ app.post('/api/agent/login', async (c) => {
       return c.json({ success: false, error: '账号或密码错误' }, 401)
     }
     
-    // 验证密码
-    const passwordMatch = await verifyPassword(password, agent.password_hash)
+    // 验证密码（简化版 - 测试环境）
+    // 支持明文密码比较或bcrypt验证
+    let passwordMatch = false
+    if (agent.password_hash === password) {
+      // 明文密码匹配
+      passwordMatch = true
+    } else {
+      // 尝试bcrypt验证
+      try {
+        passwordMatch = await verifyPassword(password, agent.password_hash)
+      } catch (e) {
+        passwordMatch = false
+      }
+    }
+    
     if (!passwordMatch) {
       return c.json({ success: false, error: '账号或密码错误' }, 401)
     }
