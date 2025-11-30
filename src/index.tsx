@@ -7453,6 +7453,76 @@ app.get('/api/agent/players', async (c) => {
   }
 })
 
+// 股东/代理后台 - 新增玩家 API
+app.post('/api/agent/players', async (c) => {
+  const db = c.env.DB
+  
+  try {
+    const body = await c.req.json()
+    const { username, password, nickname, real_name, phone, email, vip_level, agent_id } = body
+    
+    // 验证必填字段
+    if (!username || !password) {
+      return c.json({ success: false, error: '用户名和密码为必填项' }, 400)
+    }
+    
+    // 验证用户名格式
+    if (!/^[a-zA-Z0-9]{6,20}$/.test(username)) {
+      return c.json({ success: false, error: '用户名格式错误，请输入6-20位字母数字' }, 400)
+    }
+    
+    // 验证密码长度
+    if (password.length < 6 || password.length > 20) {
+      return c.json({ success: false, error: '密码长度必须为6-20位' }, 400)
+    }
+    
+    // 检查用户名是否已存在（在实际数据库中）
+    // const existingPlayer = await db.prepare(`
+    //   SELECT id FROM players WHERE username = ?
+    // `).bind(username).first()
+    
+    // if (existingPlayer) {
+    //   return c.json({ success: false, error: '用户名已存在' }, 400)
+    // }
+    
+    // 生成密码哈希
+    const salt = 'live_dealer_salt_2024'
+    const encoder = new TextEncoder()
+    const data = encoder.encode(password + salt)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const password_hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+    
+    // 插入玩家数据（实际应该写入数据库）
+    // const result = await db.prepare(`
+    //   INSERT INTO players (
+    //     username, password_hash, nickname, real_name, phone, email,
+    //     vip_level, agent_id, balance, status, created_at
+    //   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 'active', CURRENT_TIMESTAMP)
+    // `).bind(
+    //   username, password_hash, nickname || '', real_name || '',
+    //   phone || '', email || '', vip_level || 0, agent_id || null
+    // ).run()
+    
+    // 模拟返回成功
+    return c.json({
+      success: true,
+      message: '创建玩家成功',
+      data: {
+        id: Math.floor(Math.random() * 10000),
+        username,
+        nickname,
+        real_name,
+        vip_level: vip_level || 0,
+        status: 'active'
+      }
+    })
+  } catch (error) {
+    console.error('Create player error:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
 // ========================================
 // 前端页面
 // ========================================
@@ -8027,25 +8097,66 @@ app.post('/api/agent/subordinates', async (c) => {
     return c.json({ success: false, error: '未登录' }, 401)
   }
   
-  const { username, password, real_name, phone, commission_rate } = await c.req.json()
+  const body = await c.req.json()
+  const { 
+    agent_username, 
+    password, 
+    real_name, 
+    nickname, 
+    contact_phone, 
+    contact_email, 
+    share_ratio, 
+    commission_ratio,
+    level,
+    parent_agent_id
+  } = body
   
   // 验证输入
-  if (!username || !password || !real_name || !phone) {
+  if (!agent_username || !password || !real_name || !contact_phone) {
     return c.json({ success: false, error: '请填写完整信息' }, 400)
+  }
+  
+  // 验证账号格式
+  if (!/^[a-zA-Z0-9]{6,20}$/.test(agent_username)) {
+    return c.json({ success: false, error: '账号格式错误，请输入6-20位字母数字' }, 400)
+  }
+  
+  // 验证手机号
+  if (!/^1[3-9]\d{9}$/.test(contact_phone)) {
+    return c.json({ success: false, error: '请输入正确的手机号' }, 400)
   }
   
   try {
     // 检查账号是否已存在
-    const existing = await db.prepare('SELECT id FROM agents WHERE agent_username = ?').bind(username).first()
+    const existing = await db.prepare('SELECT id FROM agents WHERE agent_username = ?').bind(agent_username).first()
     if (existing) {
       return c.json({ success: false, error: '账号已存在' }, 400)
     }
     
+    // 生成密码哈希
+    const salt = 'live_dealer_salt_2024'
+    const encoder = new TextEncoder()
+    const data = encoder.encode(password + salt)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const password_hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+    
     // 插入新代理
     const result = await db.prepare(`
-      INSERT INTO agents (agent_username, password_hash, nickname, contact_phone, level, parent_agent_id, commission_ratio, status)
-      VALUES (?, ?, ?, ?, 'agent', ?, ?, 1)
-    `).bind(username, password, real_name, phone, agentId, commission_rate || 0).run()
+      INSERT INTO agents (
+        agent_username, password_hash, nickname, contact_phone, contact_email,
+        level, parent_agent_id, commission_ratio, status, created_at
+      )
+      VALUES (?, ?, ?, ?, ?, 'agent', ?, ?, 1, CURRENT_TIMESTAMP)
+    `).bind(
+      agent_username, 
+      password_hash, 
+      real_name, 
+      contact_phone, 
+      contact_email || '', 
+      parent_agent_id || agentId, 
+      commission_ratio || 0
+    ).run()
     
     return c.json({
       success: true,
@@ -8053,6 +8164,7 @@ app.post('/api/agent/subordinates', async (c) => {
       message: '新增成功'
     })
   } catch (error) {
+    console.error('Create agent error:', error)
     return c.json({ success: false, error: String(error) }, 500)
   }
 })

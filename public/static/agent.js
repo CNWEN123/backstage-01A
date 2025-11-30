@@ -1859,6 +1859,282 @@ function searchLogs() {
   loadLoginLogs(1);
 }
 
+// ==========================================
+// 新增代理功能（与管理员后台布局一致）
+// ==========================================
+function showAddAgentModal() {
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
+  modal.innerHTML = `
+    <div class="bg-gray-800 rounded-xl p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold">
+          <i class="fas fa-plus text-primary mr-2"></i>
+          新增代理
+        </h3>
+        <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-white">
+          <i class="fas fa-times text-2xl"></i>
+        </button>
+      </div>
+      
+      <form id="add-agent-form" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">账号 <span class="text-red-500">*</span></label>
+            <input type="text" name="agent_username" required class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2" placeholder="6-20位字母数字">
+          </div>
+          
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">初始密码 <span class="text-red-500">*</span></label>
+            <div class="relative">
+              <input type="password" name="password" id="agent-password" required class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 pr-10" placeholder="6-20位">
+              <button type="button" onclick="togglePasswordVisibility('agent-password')" class="absolute right-2 top-2 text-gray-400 hover:text-white">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">真实姓名 <span class="text-red-500">*</span></label>
+            <input type="text" name="real_name" required class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2">
+          </div>
+          
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">昵称</label>
+            <input type="text" name="nickname" class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2">
+          </div>
+          
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">联系电话 <span class="text-red-500">*</span></label>
+            <input type="text" name="contact_phone" required class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2" placeholder="11位手机号">
+          </div>
+          
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">联系邮箱</label>
+            <input type="email" name="contact_email" class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2">
+          </div>
+          
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">占成比 (%) <span class="text-red-500">*</span></label>
+            <input type="number" name="share_ratio" value="0" min="0" max="100" step="0.1" required class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2">
+          </div>
+          
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">洗码率 (%) <span class="text-red-500">*</span></label>
+            <input type="number" name="commission_ratio" value="0" min="0" max="100" step="0.01" required class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2">
+          </div>
+        </div>
+        
+        <div class="flex gap-4 justify-end pt-4 border-t border-gray-700">
+          <button type="button" onclick="this.closest('.fixed').remove()" class="px-6 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg">
+            <i class="fas fa-times mr-2"></i>取消
+          </button>
+          <button type="submit" class="px-6 py-2 bg-primary hover:bg-blue-700 rounded-lg">
+            <i class="fas fa-plus mr-2"></i>创建
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  
+  // 绑定表单提交
+  document.getElementById('add-agent-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await createAgent(modal);
+  });
+}
+
+// 创建代理
+async function createAgent(modal) {
+  const form = document.getElementById('add-agent-form');
+  const formData = new FormData(form);
+  const data = {
+    agent_username: formData.get('agent_username'),
+    password: formData.get('password'),
+    real_name: formData.get('real_name'),
+    nickname: formData.get('nickname') || '',
+    contact_phone: formData.get('contact_phone'),
+    contact_email: formData.get('contact_email') || '',
+    share_ratio: parseFloat(formData.get('share_ratio')),
+    commission_ratio: parseFloat(formData.get('commission_ratio')),
+    level: 'agent',
+    parent_agent_id: currentUser.id
+  };
+
+  // 表单验证
+  if (!/^[a-zA-Z0-9]{6,20}$/.test(data.agent_username)) {
+    showToast('账号格式错误，请输入6-20位字母数字', 'error');
+    return;
+  }
+
+  if (!/^.{6,20}$/.test(data.password)) {
+    showToast('密码长度必须为6-20位', 'error');
+    return;
+  }
+
+  if (!/^1[3-9]\d{9}$/.test(data.contact_phone)) {
+    showToast('请输入正确的手机号', 'error');
+    return;
+  }
+
+  try {
+    const result = await api('/api/agent/subordinates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    if (result.success) {
+      showToast('创建代理成功', 'success');
+      modal.remove();
+      // 刷新代理列表
+      loadAgents(1);
+    } else {
+      showToast(result.error || '创建失败', 'error');
+    }
+  } catch (error) {
+    console.error('Create agent error:', error);
+    showToast('创建失败，请稍后重试', 'error');
+  }
+}
+
+// ==========================================
+// 新增会员功能（与管理员后台布局一致）
+// ==========================================
+function showAddPlayerModal() {
+  const modal = document.createElement('div');
+  modal.id = 'add-player-modal';
+  modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4';
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  
+  modal.innerHTML = `
+    <div class="bg-gray-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+      <div class="bg-gradient-to-r from-gray-750 to-gray-800 px-6 py-4 border-b border-gray-700 flex items-center justify-between sticky top-0 z-10">
+        <h3 class="text-xl font-bold">
+          <i class="fas fa-user-plus text-primary mr-2"></i>新增玩家
+        </h3>
+        <button onclick="this.closest('#add-player-modal').remove()" class="text-gray-400 hover:text-white transition-colors">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      
+      <form id="add-player-form" class="p-6 space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-gray-300 text-sm mb-2">用户名 <span class="text-red-400">*</span></label>
+            <input type="text" name="username" required class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:border-primary focus:outline-none" placeholder="6-20位字母数字">
+          </div>
+          <div>
+            <label class="block text-gray-300 text-sm mb-2">密码 <span class="text-red-400">*</span></label>
+            <div class="relative">
+              <input type="password" name="password" id="player-password" required class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 pr-10 focus:border-primary focus:outline-none" placeholder="6-20位">
+              <button type="button" onclick="togglePasswordVisibility('player-password')" class="absolute right-2 top-2 text-gray-400 hover:text-white">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-gray-300 text-sm mb-2">昵称</label>
+            <input type="text" name="nickname" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:border-primary focus:outline-none" placeholder="可选">
+          </div>
+          <div>
+            <label class="block text-gray-300 text-sm mb-2">真实姓名</label>
+            <input type="text" name="real_name" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:border-primary focus:outline-none" placeholder="可选">
+          </div>
+          <div>
+            <label class="block text-gray-300 text-sm mb-2">手机号</label>
+            <input type="tel" name="phone" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:border-primary focus:outline-none" placeholder="可选">
+          </div>
+          <div>
+            <label class="block text-gray-300 text-sm mb-2">邮箱</label>
+            <input type="email" name="email" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:border-primary focus:outline-none" placeholder="可选">
+          </div>
+          <div>
+            <label class="block text-gray-300 text-sm mb-2">VIP等级</label>
+            <select name="vip_level" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:border-primary focus:outline-none">
+              <option value="0">VIP 0</option>
+              <option value="1">VIP 1</option>
+              <option value="2">VIP 2</option>
+              <option value="3">VIP 3</option>
+              <option value="4">VIP 4</option>
+              <option value="5">VIP 5</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="pt-4 border-t border-gray-700 flex justify-end gap-3">
+          <button type="button" onclick="this.closest('#add-player-modal').remove()" class="px-5 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-sm font-medium transition-all">
+            <i class="fas fa-times mr-1.5"></i>取消
+          </button>
+          <button type="submit" class="px-5 py-2 bg-primary hover:bg-blue-700 rounded-lg text-sm font-medium transition-all">
+            <i class="fas fa-check mr-1.5"></i>确认创建
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // 绑定表单提交事件
+  document.getElementById('add-player-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+    
+    // 表单验证
+    if (!/^[a-zA-Z0-9]{6,20}$/.test(data.username)) {
+      showToast('用户名格式错误，请输入6-20位字母数字', 'error');
+      return;
+    }
+
+    if (!/^.{6,20}$/.test(data.password)) {
+      showToast('密码长度必须为6-20位', 'error');
+      return;
+    }
+
+    // 添加所属代理ID（当前登录的代理/股东）
+    data.agent_id = currentUser.id;
+    
+    try {
+      const result = await api('/api/agent/players', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      
+      if (result.success) {
+        showToast('创建玩家成功！', 'success');
+        modal.remove();
+        // 刷新玩家列表
+        loadPlayers(1);
+      } else {
+        showToast('创建失败: ' + result.error, 'error');
+      }
+    } catch (error) {
+      console.error('Create player error:', error);
+      showToast('创建失败，请稍后重试', 'error');
+    }
+  };
+}
+
+// 切换密码可见性
+function togglePasswordVisibility(inputId) {
+  const input = document.getElementById(inputId);
+  const icon = input.nextElementSibling.querySelector('i');
+  
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.classList.remove('fa-eye');
+    icon.classList.add('fa-eye-slash');
+  } else {
+    input.type = 'password';
+    icon.classList.remove('fa-eye-slash');
+    icon.classList.add('fa-eye');
+  }
+}
+
 // 页面加载完成
 document.addEventListener('DOMContentLoaded', () => {
   // 检查是否已登录
