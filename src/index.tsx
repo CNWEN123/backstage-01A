@@ -7171,6 +7171,230 @@ app.post('/api/finance-password/reset/:slot', async (c) => {
 })
 
 // ========================================
+// 股东/代理后台 - 团队报表 API
+// ========================================
+app.get('/api/agent/team-report', async (c) => {
+  const db = c.env.DB
+  const page = parseInt(c.req.query('page') || '1')
+  const pageSize = 20
+  const offset = (page - 1) * pageSize
+  
+  const startDate = c.req.query('start_date') || ''
+  const endDate = c.req.query('end_date') || ''
+  const search = c.req.query('search') || ''
+  const type = c.req.query('type') || ''
+  
+  try {
+    // 模拟数据（实际应从数据库查询）
+    const mockData = {
+      summary: {
+        totalMembers: 156,
+        totalPerformance: 2580000,
+        totalProfit: 458000,
+        myCommission: 91600
+      },
+      list: [
+        {
+          id: 1,
+          username: 'agent02',
+          real_name: '代理李四',
+          type: 'agent',
+          total_bet: 580000,
+          valid_bet: 520000,
+          profit: 85000,
+          share_ratio: 30,
+          my_commission: 25500
+        },
+        {
+          id: 2,
+          username: 'player001',
+          real_name: '玩家张三',
+          type: 'player',
+          total_bet: 120000,
+          valid_bet: 110000,
+          profit: -15000,
+          share_ratio: 50,
+          my_commission: 7500
+        }
+      ],
+      total: 156,
+      currentPage: page,
+      totalPages: Math.ceil(156 / pageSize)
+    }
+    
+    return c.json({ success: true, data: mockData })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ========================================
+// 股东/代理后台 - 佣金明细 API
+// ========================================
+app.get('/api/agent/commission', async (c) => {
+  const db = c.env.DB
+  const page = parseInt(c.req.query('page') || '1')
+  const pageSize = 20
+  
+  const startDate = c.req.query('start_date') || ''
+  const endDate = c.req.query('end_date') || ''
+  const search = c.req.query('search') || ''
+  const role = c.req.query('role') || ''
+  const status = c.req.query('status') || ''
+  
+  try {
+    // 模拟数据
+    const mockData = {
+      summary: {
+        total: 458600,
+        month: 91600,
+        pending: 15200,
+        today: 3800
+      },
+      list: [
+        {
+          id: 1,
+          date: '2024-11-29',
+          target_username: 'agent02',
+          target_name: '代理李四',
+          target_type: 'agent',
+          valid_bet: 520000,
+          profit: 85000,
+          share_ratio: 30,
+          commission_amount: 25500,
+          status: 'settled'
+        },
+        {
+          id: 2,
+          date: '2024-11-29',
+          target_username: 'player001',
+          target_name: '玩家张三',
+          target_type: 'player',
+          valid_bet: 110000,
+          profit: -15000,
+          share_ratio: 50,
+          commission_amount: 7500,
+          status: 'pending'
+        }
+      ],
+      total: 45,
+      currentPage: page,
+      totalPages: 3
+    }
+    
+    return c.json({ success: true, data: mockData })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ========================================
+// 股东/代理后台 - 账户设置 API
+// ========================================
+
+// 更新个人信息
+app.put('/api/agent/profile', async (c) => {
+  const db = c.env.DB
+  const { real_name, phone, email } = await c.req.json()
+  
+  try {
+    // 这里应该从 token 获取当前用户 ID
+    // 暂时使用模拟实现
+    
+    // 验证输入
+    if (!real_name || !phone) {
+      return c.json({ success: false, error: '姓名和电话不能为空' }, 400)
+    }
+    
+    return c.json({
+      success: true,
+      message: '个人信息更新成功'
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// 修改密码
+app.put('/api/agent/password', async (c) => {
+  const db = c.env.DB
+  const { old_password, new_password } = await c.req.json()
+  
+  try {
+    // 验证输入
+    if (!old_password || !new_password) {
+      return c.json({ success: false, error: '请输入完整信息' }, 400)
+    }
+    
+    if (new_password.length < 6) {
+      return c.json({ success: false, error: '新密码长度至少6位' }, 400)
+    }
+    
+    // 这里应该：
+    // 1. 从 token 获取当前用户 ID
+    // 2. 查询用户密码并验证旧密码
+    // 3. 哈希新密码并更新数据库
+    
+    // 模拟实现
+    return c.json({
+      success: true,
+      message: '密码修改成功'
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// 获取登录日志
+app.get('/api/agent/login-logs', async (c) => {
+  const db = c.env.DB
+  const page = parseInt(c.req.query('page') || '1')
+  const pageSize = 20
+  
+  const startDate = c.req.query('start_date') || ''
+  const endDate = c.req.query('end_date') || ''
+  
+  try {
+    // 模拟数据
+    const mockData = {
+      list: [
+        {
+          id: 1,
+          login_time: '2024-11-30 10:25:36',
+          ip_address: '192.168.1.100',
+          user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/119.0.0.0',
+          login_type: '密码登录',
+          status: 'success'
+        },
+        {
+          id: 2,
+          login_time: '2024-11-29 18:15:22',
+          ip_address: '192.168.1.100',
+          user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/119.0.0.0',
+          login_type: '密码登录',
+          status: 'success'
+        },
+        {
+          id: 3,
+          login_time: '2024-11-29 09:30:15',
+          ip_address: '192.168.1.105',
+          user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/537.36',
+          login_type: '密码登录',
+          status: 'failed'
+        }
+      ],
+      total: 28,
+      currentPage: page,
+      totalPages: 2
+    }
+    
+    return c.json({ success: true, data: mockData })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ========================================
 // 前端页面
 // ========================================
 // 股东/代理后台页面
@@ -7769,6 +7993,230 @@ app.post('/api/agent/subordinates', async (c) => {
       data: { id: result.meta.last_row_id },
       message: '新增成功'
     })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ========================================
+// 前端页面
+// ========================================
+app.get('/api/agent/team-report', async (c) => {
+  const db = c.env.DB
+  const page = parseInt(c.req.query('page') || '1')
+  const pageSize = 20
+  const offset = (page - 1) * pageSize
+  
+  const startDate = c.req.query('start_date') || ''
+  const endDate = c.req.query('end_date') || ''
+  const search = c.req.query('search') || ''
+  const type = c.req.query('type') || ''
+  
+  try {
+    // 模拟数据（实际应从数据库查询）
+    const mockData = {
+      summary: {
+        totalMembers: 156,
+        totalPerformance: 2580000,
+        totalProfit: 458000,
+        myCommission: 91600
+      },
+      list: [
+        {
+          id: 1,
+          username: 'agent02',
+          real_name: '代理李四',
+          type: 'agent',
+          total_bet: 580000,
+          valid_bet: 520000,
+          profit: 85000,
+          share_ratio: 30,
+          my_commission: 25500
+        },
+        {
+          id: 2,
+          username: 'player001',
+          real_name: '玩家张三',
+          type: 'player',
+          total_bet: 120000,
+          valid_bet: 110000,
+          profit: -15000,
+          share_ratio: 50,
+          my_commission: 7500
+        }
+      ],
+      total: 156,
+      currentPage: page,
+      totalPages: Math.ceil(156 / pageSize)
+    }
+    
+    return c.json({ success: true, data: mockData })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ========================================
+// 股东/代理后台 - 佣金明细 API
+// ========================================
+app.get('/api/agent/commission', async (c) => {
+  const db = c.env.DB
+  const page = parseInt(c.req.query('page') || '1')
+  const pageSize = 20
+  
+  const startDate = c.req.query('start_date') || ''
+  const endDate = c.req.query('end_date') || ''
+  const search = c.req.query('search') || ''
+  const role = c.req.query('role') || ''
+  const status = c.req.query('status') || ''
+  
+  try {
+    // 模拟数据
+    const mockData = {
+      summary: {
+        total: 458600,
+        month: 91600,
+        pending: 15200,
+        today: 3800
+      },
+      list: [
+        {
+          id: 1,
+          date: '2024-11-29',
+          target_username: 'agent02',
+          target_name: '代理李四',
+          target_type: 'agent',
+          valid_bet: 520000,
+          profit: 85000,
+          share_ratio: 30,
+          commission_amount: 25500,
+          status: 'settled'
+        },
+        {
+          id: 2,
+          date: '2024-11-29',
+          target_username: 'player001',
+          target_name: '玩家张三',
+          target_type: 'player',
+          valid_bet: 110000,
+          profit: -15000,
+          share_ratio: 50,
+          commission_amount: 7500,
+          status: 'pending'
+        }
+      ],
+      total: 45,
+      currentPage: page,
+      totalPages: 3
+    }
+    
+    return c.json({ success: true, data: mockData })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ========================================
+// 股东/代理后台 - 账户设置 API
+// ========================================
+
+// 更新个人信息
+app.put('/api/agent/profile', async (c) => {
+  const db = c.env.DB
+  const { real_name, phone, email } = await c.req.json()
+  
+  try {
+    // 这里应该从 token 获取当前用户 ID
+    // 暂时使用模拟实现
+    
+    // 验证输入
+    if (!real_name || !phone) {
+      return c.json({ success: false, error: '姓名和电话不能为空' }, 400)
+    }
+    
+    return c.json({
+      success: true,
+      message: '个人信息更新成功'
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// 修改密码
+app.put('/api/agent/password', async (c) => {
+  const db = c.env.DB
+  const { old_password, new_password } = await c.req.json()
+  
+  try {
+    // 验证输入
+    if (!old_password || !new_password) {
+      return c.json({ success: false, error: '请输入完整信息' }, 400)
+    }
+    
+    if (new_password.length < 6) {
+      return c.json({ success: false, error: '新密码长度至少6位' }, 400)
+    }
+    
+    // 这里应该：
+    // 1. 从 token 获取当前用户 ID
+    // 2. 查询用户密码并验证旧密码
+    // 3. 哈希新密码并更新数据库
+    
+    // 模拟实现
+    return c.json({
+      success: true,
+      message: '密码修改成功'
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// 获取登录日志
+app.get('/api/agent/login-logs', async (c) => {
+  const db = c.env.DB
+  const page = parseInt(c.req.query('page') || '1')
+  const pageSize = 20
+  
+  const startDate = c.req.query('start_date') || ''
+  const endDate = c.req.query('end_date') || ''
+  
+  try {
+    // 模拟数据
+    const mockData = {
+      list: [
+        {
+          id: 1,
+          login_time: '2024-11-30 10:25:36',
+          ip_address: '192.168.1.100',
+          user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/119.0.0.0',
+          login_type: '密码登录',
+          status: 'success'
+        },
+        {
+          id: 2,
+          login_time: '2024-11-29 18:15:22',
+          ip_address: '192.168.1.100',
+          user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/119.0.0.0',
+          login_type: '密码登录',
+          status: 'success'
+        },
+        {
+          id: 3,
+          login_time: '2024-11-29 09:30:15',
+          ip_address: '192.168.1.105',
+          user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/537.36',
+          login_type: '密码登录',
+          status: 'failed'
+        }
+      ],
+      total: 28,
+      currentPage: page,
+      totalPages: 2
+    }
+    
+    return c.json({ success: true, data: mockData })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
   }
