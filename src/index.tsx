@@ -7195,7 +7195,7 @@ app.get('/api/agent/team-report', async (c) => {
       },
       list: [
         {
-          id: 1,
+          id: 3, // agent02的真实ID
           username: 'agent02',
           real_name: '代理李四',
           type: 'agent',
@@ -7206,8 +7206,8 @@ app.get('/api/agent/team-report', async (c) => {
           my_commission: 25500
         },
         {
-          id: 2,
-          username: 'player001',
+          id: 11, // vip_player01的真实ID（agent_id=1）
+          username: 'vip_player01',
           real_name: '玩家张三',
           type: 'player',
           total_bet: 120000,
@@ -7255,6 +7255,7 @@ app.get('/api/agent/commission', async (c) => {
         {
           id: 1,
           date: '2024-11-29',
+          target_id: 3, // agent02的真实ID
           target_username: 'agent02',
           target_name: '代理李四',
           target_type: 'agent',
@@ -7267,7 +7268,8 @@ app.get('/api/agent/commission', async (c) => {
         {
           id: 2,
           date: '2024-11-29',
-          target_username: 'player001',
+          target_id: 11, // vip_player01的真实ID
+          target_username: 'vip_player01',
           target_name: '玩家张三',
           target_type: 'player',
           valid_bet: 110000,
@@ -8581,7 +8583,7 @@ app.get('/api/agent/team-report', async (c) => {
       },
       list: [
         {
-          id: 1,
+          id: 3, // agent02的真实ID
           username: 'agent02',
           real_name: '代理李四',
           type: 'agent',
@@ -8592,8 +8594,8 @@ app.get('/api/agent/team-report', async (c) => {
           my_commission: 25500
         },
         {
-          id: 2,
-          username: 'player001',
+          id: 11, // vip_player01的真实ID（agent_id=1）
+          username: 'vip_player01',
           real_name: '玩家张三',
           type: 'player',
           total_bet: 120000,
@@ -8641,6 +8643,7 @@ app.get('/api/agent/commission', async (c) => {
         {
           id: 1,
           date: '2024-11-29',
+          target_id: 3, // agent02的真实ID
           target_username: 'agent02',
           target_name: '代理李四',
           target_type: 'agent',
@@ -8653,7 +8656,8 @@ app.get('/api/agent/commission', async (c) => {
         {
           id: 2,
           date: '2024-11-29',
-          target_username: 'player001',
+          target_id: 11, // vip_player01的真实ID
+          target_username: 'vip_player01',
           target_name: '玩家张三',
           target_type: 'player',
           valid_bet: 110000,
