@@ -7652,14 +7652,14 @@ async function loadAgentPerformance() {
     
     if (totalCount) totalCount.textContent = formatNumber(stats.count);
     if (totalPlayers) totalPlayers.textContent = formatNumber(stats.players);
-    if (totalBet) totalBet.textContent = '¥' + formatCurrency(stats.totalBet);
+    if (totalBet) totalBet.textContent = formatCurrency(stats.totalBet);
     if (totalProfit) {
-      totalProfit.textContent = (stats.profit >= 0 ? '+' : '') + '¥' + formatCurrency(stats.profit);
+      totalProfit.textContent = (stats.profit >= 0 ? '+' : '') + formatCurrency(Math.abs(stats.profit));
       totalProfit.className = `text-lg font-bold ${stats.profit >= 0 ? 'text-green-400' : 'text-red-400'}`;
     }
-    if (totalCommission) totalCommission.textContent = '¥' + formatCurrency(stats.commission);
+    if (totalCommission) totalCommission.textContent = formatCurrency(stats.commission);
     if (netProfit) {
-      netProfit.textContent = (stats.netProfit >= 0 ? '+' : '') + '¥' + formatCurrency(stats.netProfit);
+      netProfit.textContent = (stats.netProfit >= 0 ? '+' : '') + formatCurrency(Math.abs(stats.netProfit));
       netProfit.className = `text-lg font-bold ${stats.netProfit >= 0 ? 'text-green-400' : 'text-red-400'}`;
     }
     
@@ -7688,13 +7688,13 @@ async function loadAgentPerformance() {
           </td>
           <td class="p-3 text-right font-mono">${formatNumber(a.downline_count || 0)}</td>
           <td class="p-3 text-right font-mono">${formatNumber(a.player_count || 0)}</td>
-          <td class="p-3 text-right font-mono text-cyan-400">¥${formatCurrency(a.total_bet)}</td>
+          <td class="p-3 text-right font-mono text-cyan-400">${formatCurrency(a.total_bet)}</td>
           <td class="p-3 text-right font-mono ${a.company_profit >= 0 ? 'text-green-400' : 'text-red-400'}">
-            ${(a.company_profit >= 0 ? '+' : '')}¥${formatCurrency(a.company_profit)}
+            ${(a.company_profit >= 0 ? '+' : '')}${formatCurrency(Math.abs(a.company_profit))}
           </td>
-          <td class="p-3 text-right font-mono text-yellow-400">¥${formatCurrency(a.agent_commission)}</td>
+          <td class="p-3 text-right font-mono text-yellow-400">${formatCurrency(a.agent_commission)}</td>
           <td class="p-3 text-right font-mono font-bold ${a.net_profit >= 0 ? 'text-green-400' : 'text-red-400'}">
-            ${(a.net_profit >= 0 ? '+' : '')}¥${formatCurrency(a.net_profit)}
+            ${(a.net_profit >= 0 ? '+' : '')}${formatCurrency(Math.abs(a.net_profit))}
           </td>
         </tr>
       `;
