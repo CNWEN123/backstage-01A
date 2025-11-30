@@ -556,22 +556,106 @@ async function renderPlayers(container) {
       </div>
     </div>
     
+    <!-- 查询条件栏 -->
     <div class="bg-gray-800 rounded-xl p-5 mb-6">
-      <div class="flex flex-wrap gap-4 items-center">
-        <input type="text" id="player-search" placeholder="搜索用户名/昵称..." class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 w-64 focus:outline-none focus:border-primary">
-        <select id="player-status" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary">
-          <option value="">全部状态</option>
-          <option value="0">正常</option>
-          <option value="1">冻结</option>
-          <option value="2">锁定</option>
-        </select>
-        <select id="player-online-status" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary">
-          <option value="">全部(在线/离线)</option>
-          <option value="online">在线</option>
-          <option value="offline">离线</option>
-        </select>
-        <button onclick="searchPlayers()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded-lg"><i class="fas fa-search mr-2"></i>查询</button>
-        <button onclick="showAddPlayerModal()" class="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-lg ml-auto"><i class="fas fa-plus mr-2"></i>新增玩家</button>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <!-- 搜索框 -->
+        <div>
+          <label class="text-gray-300 text-xs block mb-1.5 font-medium">账号/昵称</label>
+          <input type="text" id="player-search" placeholder="搜索用户名/昵称..." class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+        </div>
+        
+        <!-- 所属代理（层级搜索） -->
+        <div>
+          <label class="text-gray-300 text-xs block mb-1.5 font-medium">所属代理</label>
+          <select id="player-agent" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+            <option value="">全部代理</option>
+            <!-- 代理列表将动态加载 -->
+          </select>
+        </div>
+        
+        <!-- VIP等级 -->
+        <div>
+          <label class="text-gray-300 text-xs block mb-1.5 font-medium">VIP等级</label>
+          <select id="player-vip" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+            <option value="">全部等级</option>
+            <option value="0">VIP 0</option>
+            <option value="1">VIP 1</option>
+            <option value="2">VIP 2</option>
+            <option value="3">VIP 3</option>
+            <option value="4">VIP 4</option>
+            <option value="5">VIP 5</option>
+            <option value="6">VIP 6</option>
+            <option value="7">VIP 7</option>
+            <option value="8">VIP 8</option>
+            <option value="9">VIP 9</option>
+          </select>
+        </div>
+        
+        <!-- 风险等级 -->
+        <div>
+          <label class="text-gray-300 text-xs block mb-1.5 font-medium">风险等级</label>
+          <select id="player-risk" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+            <option value="">全部风险</option>
+            <option value="0">正常</option>
+            <option value="1">低风险</option>
+            <option value="2">中风险</option>
+            <option value="3">高风险</option>
+          </select>
+        </div>
+        
+        <!-- 账号状态 -->
+        <div>
+          <label class="text-gray-300 text-xs block mb-1.5 font-medium">账号状态</label>
+          <select id="player-status" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+            <option value="">全部状态</option>
+            <option value="0">正常</option>
+            <option value="1">冻结</option>
+            <option value="2">锁定</option>
+          </select>
+        </div>
+        
+        <!-- 在线状态 -->
+        <div>
+          <label class="text-gray-300 text-xs block mb-1.5 font-medium">在线状态</label>
+          <select id="player-online-status" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+            <option value="">全部</option>
+            <option value="online">在线</option>
+            <option value="offline">离线</option>
+          </select>
+        </div>
+        
+        <!-- 余额范围 -->
+        <div>
+          <label class="text-gray-300 text-xs block mb-1.5 font-medium">余额范围</label>
+          <div class="flex gap-2">
+            <input type="number" id="player-balance-min" placeholder="最小" class="w-1/2 bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+            <input type="number" id="player-balance-max" placeholder="最大" class="w-1/2 bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+          </div>
+        </div>
+        
+        <!-- 操作按钮 -->
+        <div class="flex items-end gap-2">
+          <button onclick="searchPlayers()" class="flex-1 bg-primary hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+            <i class="fas fa-search mr-1.5"></i>查询
+          </button>
+          <button onclick="resetPlayerSearch()" class="flex-1 bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+            <i class="fas fa-redo mr-1.5"></i>重置
+          </button>
+        </div>
+      </div>
+      
+      <!-- 操作按钮栏 -->
+      <div class="flex gap-3 mt-4 pt-4 border-t border-gray-700">
+        <button onclick="showAddPlayerModal()" class="bg-green-600 hover:bg-green-700 px-5 py-2 rounded-lg font-medium transition-colors">
+          <i class="fas fa-plus mr-2"></i>新增玩家
+        </button>
+        <button onclick="exportPlayers()" class="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg font-medium transition-colors">
+          <i class="fas fa-file-export mr-2"></i>导出报表
+        </button>
+        <button onclick="refreshPlayers()" class="bg-gray-600 hover:bg-gray-700 px-5 py-2 rounded-lg font-medium transition-colors">
+          <i class="fas fa-sync-alt mr-2"></i>刷新
+        </button>
       </div>
     </div>
     
@@ -664,6 +748,9 @@ async function renderPlayers(container) {
   
   // 加载VIP等级配置
   loadVipLevels();
+  
+  // 加载代理列表用于筛选
+  loadAgentsForFilter();
 }
 
 // 按在线状态筛选
@@ -672,41 +759,136 @@ async function filterPlayersByOnline(status) {
   searchPlayers();
 }
 
-// 玩家搜索
+// 玩家搜索（增强版）
 async function searchPlayers() {
   const search = document.getElementById('player-search')?.value || '';
+  const agent = document.getElementById('player-agent')?.value || '';
+  const vip = document.getElementById('player-vip')?.value || '';
+  const risk = document.getElementById('player-risk')?.value || '';
   const status = document.getElementById('player-status')?.value || '';
   const onlineStatus = document.getElementById('player-online-status')?.value || '';
+  const balanceMin = document.getElementById('player-balance-min')?.value || '';
+  const balanceMax = document.getElementById('player-balance-max')?.value || '';
   
   let url = '/api/players?';
   const params = [];
   if (search) params.push('search=' + encodeURIComponent(search));
+  if (agent) params.push('agent_id=' + agent);
+  if (vip) params.push('vip_level=' + vip);
+  if (risk) params.push('risk_level=' + risk);
   if (status) params.push('status=' + status);
   if (onlineStatus) params.push('online_status=' + onlineStatus);
+  if (balanceMin) params.push('balance_min=' + balanceMin);
+  if (balanceMax) params.push('balance_max=' + balanceMax);
   url += params.join('&');
   
-  const result = await api(url);
-  if (!result.success) {
-    alert(result.error);
-    return;
+  try {
+    const result = await api(url);
+    if (!result.success) {
+      showToast(result.error || '查询失败', 'error');
+      return;
+    }
+    
+    const players = result.data || [];
+    const stats = result.stats || { total: players.length, online: 0, offline: players.length };
+    
+    // 更新统计卡片
+    const statsCards = document.querySelector('.grid.grid-cols-3');
+    if (statsCards) {
+      const totalCard = statsCards.children[0]?.querySelector('.text-2xl');
+      const onlineCard = statsCards.children[1]?.querySelector('.text-2xl');
+      const offlineCard = statsCards.children[2]?.querySelector('.text-2xl');
+      if (totalCard) totalCard.textContent = formatNumber(stats.total);
+      if (onlineCard) onlineCard.textContent = formatNumber(stats.online);
+      if (offlineCard) offlineCard.textContent = formatNumber(stats.offline);
+    }
+    
+    // 更新表格
+    renderPlayersTable(players, result.pagination);
+    showToast('查询成功', 'success');
+  } catch (error) {
+    console.error('Search players error:', error);
+    showToast('查询失败: ' + error.message, 'error');
   }
-  
-  const players = result.data || [];
-  const stats = result.stats || { total: players.length, online: 0, offline: players.length };
-  
-  // 更新统计卡片
-  const statsCards = document.querySelector('.grid.grid-cols-3');
-  if (statsCards) {
-    const totalCard = statsCards.children[0]?.querySelector('.text-2xl');
-    const onlineCard = statsCards.children[1]?.querySelector('.text-2xl');
-    const offlineCard = statsCards.children[2]?.querySelector('.text-2xl');
-    if (totalCard) totalCard.textContent = formatNumber(stats.total);
-    if (onlineCard) onlineCard.textContent = formatNumber(stats.online);
-    if (offlineCard) offlineCard.textContent = formatNumber(stats.offline);
+}
+
+// 重置玩家搜索
+function resetPlayerSearch() {
+  document.getElementById('player-search').value = '';
+  document.getElementById('player-agent').value = '';
+  document.getElementById('player-vip').value = '';
+  document.getElementById('player-risk').value = '';
+  document.getElementById('player-status').value = '';
+  document.getElementById('player-online-status').value = '';
+  document.getElementById('player-balance-min').value = '';
+  document.getElementById('player-balance-max').value = '';
+  searchPlayers();
+}
+
+// 刷新玩家列表
+function refreshPlayers() {
+  loadModule('players');
+  showToast('刷新成功', 'success');
+}
+
+// 导出玩家报表
+async function exportPlayers() {
+  try {
+    // 获取当前搜索条件
+    const search = document.getElementById('player-search')?.value || '';
+    const agent = document.getElementById('player-agent')?.value || '';
+    const vip = document.getElementById('player-vip')?.value || '';
+    const risk = document.getElementById('player-risk')?.value || '';
+    const status = document.getElementById('player-status')?.value || '';
+    const onlineStatus = document.getElementById('player-online-status')?.value || '';
+    const balanceMin = document.getElementById('player-balance-min')?.value || '';
+    const balanceMax = document.getElementById('player-balance-max')?.value || '';
+    
+    let url = '/api/reports/export?type=players';
+    const params = [];
+    if (search) params.push('search=' + encodeURIComponent(search));
+    if (agent) params.push('agent_id=' + agent);
+    if (vip) params.push('vip_level=' + vip);
+    if (risk) params.push('risk_level=' + risk);
+    if (status) params.push('status=' + status);
+    if (onlineStatus) params.push('online_status=' + onlineStatus);
+    if (balanceMin) params.push('balance_min=' + balanceMin);
+    if (balanceMax) params.push('balance_max=' + balanceMax);
+    
+    if (params.length > 0) {
+      url += '&' + params.join('&');
+    }
+    
+    showToast('正在导出报表...', 'info');
+    
+    // 下载文件
+    window.open(url, '_blank');
+    
+    showToast('导出成功！请查看下载文件', 'success');
+  } catch (error) {
+    console.error('Export players error:', error);
+    showToast('导出失败: ' + error.message, 'error');
   }
-  
-  // 更新表格
-  renderPlayersTable(players, result.pagination);
+}
+
+// 加载代理列表用于筛选
+async function loadAgentsForFilter() {
+  try {
+    const result = await api('/api/agents?status=1');
+    if (result.success && result.data) {
+      const select = document.querySelector('#player-agent');
+      if (select) {
+        const options = result.data.map(agent => {
+          const levelBadge = agent.level === 'shareholder' ? '股东' : 
+                            agent.level === 'general_agent' ? '总代理' : '代理';
+          return `<option value="${agent.id}">${escapeHtml(agent.agent_username || agent.username)} (${levelBadge})</option>`;
+        }).join('');
+        select.innerHTML = '<option value="">全部代理</option>' + options;
+      }
+    }
+  } catch (error) {
+    console.error('Error loading agents for filter:', error);
+  }
 }
 
 // 渲染玩家表格
