@@ -931,6 +931,311 @@ app.put('/api/withdraws/:id', async (c) => {
   }
 })
 
+// 转账记录列表
+app.get('/api/transfers', async (c) => {
+  const db = c.env.DB
+  const { status, start_date, end_date, order_no, from_player, to_player, page = '1', limit = '50' } = c.req.query()
+  
+  try {
+    let sql = `SELECT 
+      t.*,
+      fp.username as from_player_name,
+      fp.vip_level as from_vip_level,
+      tp.username as to_player_name,
+      tp.vip_level as to_vip_level,
+      a.nickname as reviewer_name
+      FROM transfer_records t
+      LEFT JOIN players fp ON t.from_player_id = fp.id
+      LEFT JOIN players tp ON t.to_player_id = tp.id
+      LEFT JOIN admins a ON t.reviewed_by = a.id
+      WHERE 1=1`
+    const params: any[] = []
+    
+    if (status) {
+      sql += ` AND t.status = ?`
+      params.push(status)
+    }
+    if (order_no) {
+      sql += ` AND t.order_no LIKE ?`
+      params.push(`%${order_no}%`)
+    }
+    if (from_player) {
+      sql += ` AND (fp.username LIKE ? OR fp.id = ?)`
+      params.push(`%${from_player}%`, parseInt(from_player) || 0)
+    }
+    if (to_player) {
+      sql += ` AND (tp.username LIKE ? OR tp.id = ?)`
+      params.push(`%${to_player}%`, parseInt(to_player) || 0)
+    }
+    if (start_date) {
+      sql += ` AND date(t.created_at) >= date(?)`
+      params.push(start_date)
+    }
+    if (end_date) {
+      sql += ` AND date(t.created_at) <= date(?)`
+      params.push(end_date)
+    }
+    
+    sql += ` ORDER BY t.created_at DESC LIMIT ? OFFSET ?`
+    params.push(parseInt(limit), (parseInt(page) - 1) * parseInt(limit))
+    
+    const transfers = await db.prepare(sql).bind(...params).all()
+    
+    // 统计汇总
+    let statsSql = `SELECT 
+      COUNT(*) as total_count,
+      SUM(amount) as total_amount,
+      SUM(fee) as total_fee,
+      SUM(actual_amount) as total_actual_amount
+      FROM transfer_records t
+      WHERE 1=1`
+    const statsParams: any[] = []
+    
+    if (status) {
+      statsSql += ` AND t.status = ?`
+      statsParams.push(status)
+    }
+    if (start_date) {
+      statsSql += ` AND date(t.created_at) >= date(?)`
+      statsParams.push(start_date)
+    }
+    if (end_date) {
+      statsSql += ` AND date(t.created_at) <= date(?)`
+      statsParams.push(end_date)
+    }
+    
+    const stats = await db.prepare(statsSql).bind(...statsParams).first()
+    
+    return c.json({ 
+      success: true, 
+      data: transfers.results,
+      stats,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: (stats as any)?.total_count || 0
+      }
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// 转账审核
+app.put('/api/transfers/:id/review', async (c) => {
+  const db = c.env.DB
+  const id = c.req.param('id')
+  const { action, remark, reviewer_id = 1, reviewer_name = 'admin' } = await c.req.json()
+  
+  try {
+    const transfer = await db.prepare("SELECT * FROM transfer_records WHERE id = ?").bind(id).first() as any
+    if (!transfer) {
+      return c.json({ success: false, error: '转账记录不存在' }, 404)
+    }
+    
+    if (transfer.status !== 'pending') {
+      return c.json({ success: false, error: '该转账已处理' }, 400)
+    }
+    
+    if (action === 'approve') {
+      // 通过审核，执行转账
+      // 1. 扣除转出方余额
+      const deductResult = await db.prepare(`
+        UPDATE players SET balance = balance - ? WHERE id = ? AND balance >= ?
+      `).bind(transfer.amount, transfer.from_player_id, transfer.amount).run()
+      
+      if (deductResult.meta.changes === 0) {
+        return c.json({ success: false, error: '转出方余额不足' }, 400)
+      }
+      
+      // 2. 增加转入方余额
+      await db.prepare(`
+        UPDATE players SET balance = balance + ? WHERE id = ?
+      `).bind(transfer.actual_amount, transfer.to_player_id).run()
+      
+      // 3. 创建交易记录
+      const orderNo1 = `TRF${Date.now()}OUT${transfer.from_player_id}`
+      const orderNo2 = `TRF${Date.now()}IN${transfer.to_player_id}`
+      
+      await db.prepare(`
+        INSERT INTO transactions (order_no, player_id, transaction_type, amount, balance_before, balance_after, related_order_id, remark, created_at)
+        SELECT ?, ?, 9, ?, balance, balance - ?, ?, ?, datetime('now')
+        FROM players WHERE id = ?
+      `).bind(orderNo1, transfer.from_player_id, -transfer.amount, transfer.amount, transfer.order_no, '转账转出', transfer.from_player_id).run()
+      
+      await db.prepare(`
+        INSERT INTO transactions (order_no, player_id, transaction_type, amount, balance_before, balance_after, related_order_id, remark, created_at)
+        SELECT ?, ?, 10, ?, balance - ?, balance, ?, ?, datetime('now')
+        FROM players WHERE id = ?
+      `).bind(orderNo2, transfer.to_player_id, transfer.actual_amount, transfer.actual_amount, transfer.order_no, '转账转入', transfer.to_player_id).run()
+      
+      // 4. 更新转账状态
+      await db.prepare(`
+        UPDATE transfer_records 
+        SET status = 'completed', reviewed_by = ?, reviewed_at = datetime('now'), remark = ?
+        WHERE id = ?
+      `).bind(reviewer_id, remark || '审核通过', id).run()
+      
+      return c.json({ success: true, message: '转账审核通过，已完成资金划转' })
+      
+    } else if (action === 'reject') {
+      // 拒绝审核
+      await db.prepare(`
+        UPDATE transfer_records 
+        SET status = 'cancelled', reviewed_by = ?, reviewed_at = datetime('now'), remark = ?
+        WHERE id = ?
+      `).bind(reviewer_id, remark || '审核拒绝', id).run()
+      
+      return c.json({ success: true, message: '转账已拒绝' })
+    }
+    
+    return c.json({ success: false, error: '无效的操作' }, 400)
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// 转账手续费配置列表
+app.get('/api/transfer-fee-configs', async (c) => {
+  const db = c.env.DB
+  
+  try {
+    const configs = await db.prepare(`
+      SELECT * FROM transfer_fee_configs ORDER BY priority DESC, id ASC
+    `).all()
+    
+    return c.json({ success: true, data: configs.results })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// 创建转账手续费配置
+app.post('/api/transfer-fee-configs', async (c) => {
+  const db = c.env.DB
+  const data = await c.req.json()
+  
+  try {
+    const result = await db.prepare(`
+      INSERT INTO transfer_fee_configs 
+      (name, vip_level, min_amount, max_amount, fee_type, fee_value, min_fee, max_fee, priority, is_enabled)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      data.name,
+      data.vip_level ?? -1,
+      data.min_amount || 0,
+      data.max_amount || 0,
+      data.fee_type,
+      data.fee_value,
+      data.min_fee || 0,
+      data.max_fee || 0,
+      data.priority || 0,
+      data.is_enabled ? 1 : 0
+    ).run()
+    
+    return c.json({ success: true, id: result.meta.last_row_id })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// 更新转账手续费配置
+app.put('/api/transfer-fee-configs/:id', async (c) => {
+  const db = c.env.DB
+  const id = c.req.param('id')
+  const data = await c.req.json()
+  
+  try {
+    await db.prepare(`
+      UPDATE transfer_fee_configs 
+      SET name = ?, vip_level = ?, min_amount = ?, max_amount = ?, 
+          fee_type = ?, fee_value = ?, min_fee = ?, max_fee = ?, 
+          priority = ?, is_enabled = ?, updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(
+      data.name,
+      data.vip_level ?? -1,
+      data.min_amount || 0,
+      data.max_amount || 0,
+      data.fee_type,
+      data.fee_value,
+      data.min_fee || 0,
+      data.max_fee || 0,
+      data.priority || 0,
+      data.is_enabled ? 1 : 0,
+      id
+    ).run()
+    
+    return c.json({ success: true })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// 删除转账手续费配置
+app.delete('/api/transfer-fee-configs/:id', async (c) => {
+  const db = c.env.DB
+  const id = c.req.param('id')
+  
+  try {
+    await db.prepare("DELETE FROM transfer_fee_configs WHERE id = ?").bind(id).run()
+    return c.json({ success: true })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// 计算转账手续费
+app.post('/api/transfers/calculate-fee', async (c) => {
+  const db = c.env.DB
+  const { amount, from_player_id } = await c.req.json()
+  
+  try {
+    // 获取玩家VIP等级
+    const player = await db.prepare("SELECT vip_level FROM players WHERE id = ?").bind(from_player_id).first() as any
+    if (!player) {
+      return c.json({ success: false, error: '玩家不存在' }, 404)
+    }
+    
+    // 查找匹配的手续费规则
+    const config = await db.prepare(`
+      SELECT * FROM transfer_fee_configs 
+      WHERE is_enabled = 1 
+        AND (vip_level = -1 OR vip_level = ?)
+        AND (min_amount = 0 OR ? >= min_amount)
+        AND (max_amount = 0 OR ? <= max_amount)
+      ORDER BY priority DESC, id ASC
+      LIMIT 1
+    `).bind(player.vip_level, amount, amount).first() as any
+    
+    let fee = 0
+    let feeConfigId = null
+    
+    if (config) {
+      feeConfigId = config.id
+      if (config.fee_type === 'percentage') {
+        fee = amount * (config.fee_value / 100)
+        if (config.min_fee > 0 && fee < config.min_fee) fee = config.min_fee
+        if (config.max_fee > 0 && fee > config.max_fee) fee = config.max_fee
+      } else {
+        fee = config.fee_value
+      }
+    }
+    
+    const actualAmount = amount - fee
+    
+    return c.json({ 
+      success: true, 
+      fee, 
+      actual_amount: actualAmount,
+      fee_config_id: feeConfigId,
+      config_name: config?.name || '默认费率'
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
 // 存款请求列表 - 增强版支持更多筛选条件
 app.get('/api/deposits', async (c) => {
   const db = c.env.DB
