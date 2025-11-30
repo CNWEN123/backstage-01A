@@ -1346,6 +1346,9 @@ function renderAccount() {
           <button onclick="showAccountTab('password')" data-tab="password" class="account-tab-btn flex-1 px-6 py-4 text-center transition hover:bg-gray-750 border-b-2 border-transparent">
             <i class="fas fa-key mr-2"></i>修改密码
           </button>
+          <button onclick="showAccountTab('invite')" data-tab="invite" class="account-tab-btn flex-1 px-6 py-4 text-center transition hover:bg-gray-750 border-b-2 border-transparent">
+            <i class="fas fa-share-alt mr-2"></i>分享邀请
+          </button>
           <button onclick="showAccountTab('logs')" data-tab="logs" class="account-tab-btn flex-1 px-6 py-4 text-center transition hover:bg-gray-750 border-b-2 border-transparent">
             <i class="fas fa-history mr-2"></i>登录日志
           </button>
@@ -1574,6 +1577,9 @@ function showAccountTab(tab) {
     case 'password':
       renderPasswordTab();
       break;
+    case 'invite':
+      renderInviteTab();
+      break;
     case 'logs':
       renderLogsTab();
       break;
@@ -1682,6 +1688,173 @@ function renderPasswordTab() {
       </form>
     </div>
   `;
+}
+
+// 渲染分享邀请选项卡
+function renderInviteTab() {
+  const content = document.getElementById('account-tab-content');
+  
+  // 生成邀请链接（基于当前用户ID）
+  const baseUrl = window.location.origin;
+  const inviteCode = `${currentUser.id}_${btoa(currentUser.username).substring(0, 8)}`;
+  const inviteLink = `${baseUrl}/register.html?invite=${inviteCode}`;
+  
+  content.innerHTML = `
+    <div class="bg-gray-800 rounded-xl p-8 border border-gray-700">
+      <h3 class="text-xl font-semibold mb-6">
+        <i class="fas fa-share-alt text-primary mr-2"></i>分享邀请链接
+      </h3>
+      
+      <div class="max-w-3xl">
+        <!-- 邀请说明 -->
+        <div class="bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/30 rounded-xl p-6 mb-6">
+          <div class="flex items-start space-x-4">
+            <div class="flex-shrink-0">
+              <i class="fas fa-info-circle text-blue-400 text-2xl"></i>
+            </div>
+            <div>
+              <h4 class="text-lg font-semibold text-blue-300 mb-2">邀请说明</h4>
+              <ul class="text-gray-300 space-y-2 text-sm">
+                <li><i class="fas fa-check-circle text-green-400 mr-2"></i>分享您的专属邀请链接给新用户</li>
+                <li><i class="fas fa-check-circle text-green-400 mr-2"></i>新用户通过链接注册后自动绑定为您的下级</li>
+                <li><i class="fas fa-check-circle text-green-400 mr-2"></i>您可以从下级的业绩中获得佣金分成</li>
+                <li><i class="fas fa-check-circle text-green-400 mr-2"></i>链接永久有效，可重复使用</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 邀请码 -->
+        <div class="mb-6">
+          <label class="block text-sm text-gray-400 mb-3">
+            <i class="fas fa-tag mr-2"></i>您的邀请码
+          </label>
+          <div class="flex items-center space-x-3">
+            <input type="text" id="invite-code" value="${inviteCode}" readonly
+                   class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 font-mono text-lg">
+            <button onclick="copyInviteCode()" class="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg transition">
+              <i class="fas fa-copy mr-2"></i>复制
+            </button>
+          </div>
+        </div>
+        
+        <!-- 邀请链接 -->
+        <div class="mb-6">
+          <label class="block text-sm text-gray-400 mb-3">
+            <i class="fas fa-link mr-2"></i>您的专属邀请链接
+          </label>
+          <div class="flex items-center space-x-3">
+            <input type="text" id="invite-link" value="${inviteLink}" readonly
+                   class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-sm break-all">
+            <button onclick="copyInviteLink()" class="px-6 py-3 bg-primary hover:bg-blue-700 rounded-lg transition">
+              <i class="fas fa-copy mr-2"></i>复制链接
+            </button>
+          </div>
+        </div>
+        
+        <!-- 二维码区域 -->
+        <div class="bg-gray-750 rounded-xl p-6 border border-gray-700">
+          <h4 class="text-lg font-semibold mb-4">
+            <i class="fas fa-qrcode text-primary mr-2"></i>邀请二维码
+          </h4>
+          <div class="flex items-center justify-center space-x-8">
+            <div class="text-center">
+              <div id="invite-qrcode" class="bg-white p-4 rounded-lg inline-block mb-3">
+                <!-- 二维码将在这里生成 -->
+                <div class="w-48 h-48 flex items-center justify-center text-gray-400">
+                  <i class="fas fa-qrcode text-6xl"></i>
+                </div>
+              </div>
+              <p class="text-sm text-gray-400">扫码注册并绑定关系</p>
+            </div>
+            <div class="flex flex-col space-y-3">
+              <button onclick="downloadQRCode()" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition">
+                <i class="fas fa-download mr-2"></i>下载二维码
+              </button>
+              <button onclick="printQRCode()" class="px-6 py-3 bg-gray-600 hover:bg-gray-700 rounded-lg transition">
+                <i class="fas fa-print mr-2"></i>打印二维码
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 邀请统计 -->
+        <div class="mt-6 grid grid-cols-3 gap-4">
+          <div class="bg-gradient-to-br from-blue-900/30 to-blue-800/20 border border-blue-500/30 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-gray-400">累计邀请</span>
+              <i class="fas fa-users text-blue-400"></i>
+            </div>
+            <div class="text-3xl font-bold text-blue-300" id="total-invites">0</div>
+            <div class="text-xs text-gray-500 mt-1">总下级人数</div>
+          </div>
+          
+          <div class="bg-gradient-to-br from-green-900/30 to-green-800/20 border border-green-500/30 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-gray-400">本月新增</span>
+              <i class="fas fa-user-plus text-green-400"></i>
+            </div>
+            <div class="text-3xl font-bold text-green-300" id="month-invites">0</div>
+            <div class="text-xs text-gray-500 mt-1">本月新增下级</div>
+          </div>
+          
+          <div class="bg-gradient-to-br from-purple-900/30 to-purple-800/20 border border-purple-500/30 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-gray-400">今日新增</span>
+              <i class="fas fa-star text-purple-400"></i>
+            </div>
+            <div class="text-3xl font-bold text-purple-300" id="today-invites">0</div>
+            <div class="text-xs text-gray-500 mt-1">今日新增下级</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // 加载邀请统计数据
+  loadInviteStats();
+}
+
+// 复制邀请码
+function copyInviteCode() {
+  const input = document.getElementById('invite-code');
+  input.select();
+  document.execCommand('copy');
+  showToast('邀请码已复制到剪贴板', 'success');
+}
+
+// 复制邀请链接
+function copyInviteLink() {
+  const input = document.getElementById('invite-link');
+  input.select();
+  document.execCommand('copy');
+  showToast('邀请链接已复制到剪贴板', 'success');
+}
+
+// 下载二维码
+function downloadQRCode() {
+  showToast('二维码下载功能开发中', 'info');
+  // TODO: 实现二维码下载功能
+}
+
+// 打印二维码
+function printQRCode() {
+  showToast('二维码打印功能开发中', 'info');
+  // TODO: 实现二维码打印功能
+}
+
+// 加载邀请统计数据
+async function loadInviteStats() {
+  try {
+    const result = await api('/api/agent/invite-stats');
+    if (result.success && result.data) {
+      document.getElementById('total-invites').textContent = result.data.total || 0;
+      document.getElementById('month-invites').textContent = result.data.month || 0;
+      document.getElementById('today-invites').textContent = result.data.today || 0;
+    }
+  } catch (error) {
+    console.error('Load invite stats error:', error);
+  }
 }
 
 // 渲染登录日志选项卡
@@ -1905,8 +2078,8 @@ function showAddAgentModal() {
           </div>
           
           <div>
-            <label class="block text-sm text-gray-400 mb-2">联系电话 <span class="text-red-500">*</span></label>
-            <input type="text" name="contact_phone" required class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2" placeholder="11位手机号">
+            <label class="block text-sm text-gray-400 mb-2">联系电话</label>
+            <input type="text" name="contact_phone" class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2" placeholder="11位手机号（可选）">
           </div>
           
           <div>
@@ -1973,7 +2146,8 @@ async function createAgent(modal) {
     return;
   }
 
-  if (!/^1[3-9]\d{9}$/.test(data.contact_phone)) {
+  // 手机号非必填，但如果填写了需要验证格式
+  if (data.contact_phone && !/^1[3-9]\d{9}$/.test(data.contact_phone)) {
     showToast('请输入正确的手机号', 'error');
     return;
   }
@@ -2051,15 +2225,8 @@ function showAddPlayerModal() {
             <input type="email" name="email" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:border-primary focus:outline-none" placeholder="可选">
           </div>
           <div>
-            <label class="block text-gray-300 text-sm mb-2">VIP等级</label>
-            <select name="vip_level" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:border-primary focus:outline-none">
-              <option value="0">VIP 0</option>
-              <option value="1">VIP 1</option>
-              <option value="2">VIP 2</option>
-              <option value="3">VIP 3</option>
-              <option value="4">VIP 4</option>
-              <option value="5">VIP 5</option>
-            </select>
+            <label class="block text-gray-300 text-sm mb-2">洗码百分百 (%)</label>
+            <input type="number" name="rebate_ratio" value="0" min="0" max="100" step="0.01" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:border-primary focus:outline-none" placeholder="0-100">
           </div>
         </div>
         

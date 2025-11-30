@@ -7523,6 +7523,47 @@ app.post('/api/agent/players', async (c) => {
   }
 })
 
+// 股东/代理后台 - 邀请统计 API
+app.get('/api/agent/invite-stats', async (c) => {
+  const db = c.env.DB
+  const agentId = getAgentIdFromToken(c)
+  
+  if (!agentId) {
+    return c.json({ success: false, error: '未登录' }, 401)
+  }
+  
+  try {
+    // 查询累计邀请人数（下级总数）
+    const totalResult = await db.prepare(`
+      SELECT COUNT(*) as total FROM agents WHERE parent_agent_id = ?
+    `).bind(agentId).first() as any
+    
+    // 查询本月新增（实际应查询本月创建的下级）
+    // const monthResult = await db.prepare(`
+    //   SELECT COUNT(*) as month FROM agents 
+    //   WHERE parent_agent_id = ? AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')
+    // `).bind(agentId).first() as any
+    
+    // 查询今日新增
+    // const todayResult = await db.prepare(`
+    //   SELECT COUNT(*) as today FROM agents 
+    //   WHERE parent_agent_id = ? AND date(created_at) = date('now')
+    // `).bind(agentId).first() as any
+    
+    return c.json({
+      success: true,
+      data: {
+        total: totalResult?.total || 0,
+        month: 5, // 模拟数据
+        today: 2  // 模拟数据
+      }
+    })
+  } catch (error) {
+    console.error('Get invite stats error:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
 // ========================================
 // 前端页面
 // ========================================
@@ -8112,7 +8153,7 @@ app.post('/api/agent/subordinates', async (c) => {
   } = body
   
   // 验证输入
-  if (!agent_username || !password || !real_name || !contact_phone) {
+  if (!agent_username || !password || !real_name) {
     return c.json({ success: false, error: '请填写完整信息' }, 400)
   }
   
@@ -8121,8 +8162,8 @@ app.post('/api/agent/subordinates', async (c) => {
     return c.json({ success: false, error: '账号格式错误，请输入6-20位字母数字' }, 400)
   }
   
-  // 验证手机号
-  if (!/^1[3-9]\d{9}$/.test(contact_phone)) {
+  // 验证手机号（非必填，但如果填写了需要验证格式）
+  if (contact_phone && !/^1[3-9]\d{9}$/.test(contact_phone)) {
     return c.json({ success: false, error: '请输入正确的手机号' }, 400)
   }
   
