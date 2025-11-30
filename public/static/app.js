@@ -10180,7 +10180,7 @@ async function renderContent(container) {
       <button onclick="filterContent('marquee')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600">跑马灯</button>
       <button onclick="filterContent('popup')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600">弹窗公告</button>
       <button onclick="filterContent('game_rule')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600">游戏规则</button>
-      <button class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg ml-auto"><i class="fas fa-plus mr-2"></i>新增内容</button>
+      <button onclick="showAddContentModal()" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg ml-auto"><i class="fas fa-plus mr-2"></i>新增内容</button>
     </div>
     
     <div class="bg-gray-800 rounded-xl overflow-hidden">
@@ -10227,6 +10227,163 @@ async function renderContent(container) {
       </table>
     </div>
   `;
+}
+
+// 显示新增内容模态框
+function showAddContentModal() {
+  const modal = document.createElement('div');
+  modal.id = 'add-content-modal';
+  modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  
+  modal.innerHTML = `
+    <div class="bg-gray-800 rounded-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-bold flex items-center">
+            <i class="fas fa-plus-circle text-primary mr-2"></i>
+            新增内容
+          </h3>
+          <button onclick="document.getElementById('add-content-modal').remove()" class="text-gray-400 hover:text-white">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+        
+        <form id="add-content-form" onsubmit="submitContent(event)">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- 内容类型 -->
+            <div>
+              <label class="block text-gray-400 text-sm mb-2">内容类型 <span class="text-red-400">*</span></label>
+              <select name="type" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary">
+                <option value="">请选择类型</option>
+                <option value="banner">轮播图</option>
+                <option value="marquee">跑马灯</option>
+                <option value="popup">弹窗公告</option>
+                <option value="game_rule">游戏规则</option>
+              </select>
+            </div>
+            
+            <!-- 语言 -->
+            <div>
+              <label class="block text-gray-400 text-sm mb-2">语言 <span class="text-red-400">*</span></label>
+              <select name="language" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary">
+                <option value="zh-CN">简体中文</option>
+                <option value="zh-TW">繁体中文</option>
+                <option value="en-US">English</option>
+                <option value="th-TH">ภาษาไทย</option>
+                <option value="vi-VN">Tiếng Việt</option>
+              </select>
+            </div>
+            
+            <!-- 标题 -->
+            <div class="md:col-span-2">
+              <label class="block text-gray-400 text-sm mb-2">标题 <span class="text-red-400">*</span></label>
+              <input type="text" name="title" required placeholder="请输入内容标题" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary">
+            </div>
+            
+            <!-- 内容 -->
+            <div class="md:col-span-2">
+              <label class="block text-gray-400 text-sm mb-2">内容 <span class="text-red-400">*</span></label>
+              <textarea name="content" required rows="8" placeholder="请输入内容详情（支持HTML格式）" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary"></textarea>
+            </div>
+            
+            <!-- 目标层级 -->
+            <div>
+              <label class="block text-gray-400 text-sm mb-2">目标层级</label>
+              <select name="target_level" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary">
+                <option value="all">全部玩家</option>
+                <option value="vip_only">仅VIP</option>
+              </select>
+            </div>
+            
+            <!-- 状态 -->
+            <div>
+              <label class="block text-gray-400 text-sm mb-2">发布状态</label>
+              <select name="status" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary">
+                <option value="draft">草稿</option>
+                <option value="published">立即发布</option>
+                <option value="scheduled">定时发布</option>
+              </select>
+            </div>
+            
+            <!-- 发布时间 -->
+            <div class="md:col-span-2">
+              <label class="block text-gray-400 text-sm mb-2">发布时间</label>
+              <input type="datetime-local" name="publish_at" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary">
+              <p class="text-xs text-gray-500 mt-1">不填写则默认为当前时间</p>
+            </div>
+            
+            <!-- 图片链接（仅轮播图） -->
+            <div class="md:col-span-2">
+              <label class="block text-gray-400 text-sm mb-2">图片链接</label>
+              <input type="url" name="image_url" placeholder="仅轮播图需要填写" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary">
+            </div>
+            
+            <!-- 跳转链接 -->
+            <div class="md:col-span-2">
+              <label class="block text-gray-400 text-sm mb-2">跳转链接</label>
+              <input type="url" name="link_url" placeholder="点击后跳转的链接（可选）" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary">
+            </div>
+          </div>
+          
+          <div class="flex justify-end gap-3 mt-6">
+            <button type="button" onclick="document.getElementById('add-content-modal').remove()" class="px-6 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg">
+              取消
+            </button>
+            <button type="submit" class="px-6 py-2 bg-primary hover:bg-blue-700 rounded-lg">
+              <i class="fas fa-save mr-2"></i>保存
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+}
+
+// 提交新增内容
+async function submitContent(event) {
+  event.preventDefault();
+  const form = event.target;
+  const formData = new FormData(form);
+  
+  // 状态转换：draft=0, published=1, scheduled=2
+  const statusMap = { draft: 0, published: 1, scheduled: 2 };
+  const statusValue = formData.get('status') || 'draft';
+  
+  const data = {
+    content_type: formData.get('type'),
+    language: formData.get('language') || 'zh-CN',
+    title: formData.get('title'),
+    content: formData.get('content'),
+    target_level: formData.get('target_level') || 'all',
+    platform: 'all',
+    status: statusMap[statusValue],
+    publish_at: formData.get('publish_at') || new Date().toISOString().slice(0, 19).replace('T', ' '),
+    image_url: formData.get('image_url') || null,
+    link_url: formData.get('link_url') || null,
+    link_target: '_blank',
+    sort_order: 0,
+    created_by: currentUser?.id || 1
+  };
+  
+  try {
+    const result = await api('/api/contents', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    
+    if (result.success) {
+      showSuccess('内容添加成功！');
+      document.getElementById('add-content-modal').remove();
+      loadModule('content');
+    } else {
+      showError('添加失败: ' + result.error);
+    }
+  } catch (error) {
+    showError('添加失败: ' + error.message);
+  }
 }
 
 // =====================
