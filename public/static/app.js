@@ -3473,15 +3473,15 @@ async function renderCommission(container) {
     
     <!-- Tabs -->
     <div class="flex flex-wrap gap-2 mb-6">
-      <button id="tab-schemes" onclick="switchCommissionTab('schemes')" class="px-4 py-2 bg-primary rounded-lg">洗码方案配置</button>
-      <button id="tab-records" onclick="switchCommissionTab('records')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600">待审核发放 <span class="bg-yellow-500 text-black text-xs px-2 py-0.5 rounded-full ml-1">${stats.pending_count || 0}</span></button>
+      <button id="tab-records" onclick="switchCommissionTab('records')" class="px-4 py-2 bg-primary rounded-lg">待审核发放 <span class="bg-yellow-500 text-black text-xs px-2 py-0.5 rounded-full ml-1">${stats.pending_count || 0}</span></button>
+      <button id="tab-schemes" onclick="switchCommissionTab('schemes')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600">洗码方案配置</button>
       <button id="tab-bonus" onclick="switchCommissionTab('bonus')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600">红利派发</button>
       <button id="tab-triggers" onclick="switchCommissionTab('triggers')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600"><i class="fas fa-bolt text-yellow-400 mr-1"></i>红利触发</button>
       <button id="tab-turnover" onclick="switchCommissionTab('turnover')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600">流水稽核设置</button>
     </div>
     
     <!-- 洗码方案配置 -->
-    <div id="commission-schemes">
+    <div id="commission-schemes" class="hidden">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         ${schemes.map(s => {
           const settleCycleName = s.settlement_cycle === 1 ? '日结' : s.settlement_cycle === 2 ? '周结' : '实时';
@@ -3547,7 +3547,7 @@ async function renderCommission(container) {
     </div>
     
     <!-- 待审核洗码 -->
-    <div id="commission-records" class="hidden">
+    <div id="commission-records">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div class="bg-gray-800 rounded-xl p-4">
           <p class="text-gray-400 text-sm">待审核金额</p>
