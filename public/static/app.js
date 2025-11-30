@@ -313,7 +313,7 @@ async function loadModule(module) {
   const titleMap = {
     dashboard: { title: '仪表盘', subtitle: '数据概览与快捷操作' },
     players: { title: '玩家控端', subtitle: '玩家管理、KYC与生命周期' },
-    agents: { title: '层级控端', subtitle: '代理体系与佣金配置' },
+    agents: { title: '层级控端', subtitle: '代理体系与洗码费配置' },
     finance: { title: '财务控端', subtitle: '资金流水与出入金审核' },
     bets: { title: '注单控端', subtitle: '投注记录与视频回放' },
     commission: { title: '红利与洗码', subtitle: 'V2.1升级 - 洗码策略配置' },
@@ -7319,7 +7319,7 @@ async function renderReports(container) {
               <th class="text-right p-3">总投注</th>
               <th class="text-right p-3">总输赢</th>
               <th class="text-right p-3">公司盈亏</th>
-              <th class="text-right p-3">代理佣金</th>
+              <th class="text-right p-3">代理洗码费</th>
               <th class="text-right p-3">净利润</th>
               <th class="text-right p-3">玩家数</th>
               <th class="text-right p-3">注单数</th>
@@ -7568,8 +7568,8 @@ async function renderReports(container) {
               <option value="total_bet_asc">投注额↑</option>
               <option value="profit_desc">盈亏↓</option>
               <option value="profit_asc">盈亏↑</option>
-              <option value="commission_desc">佣金↓</option>
-              <option value="commission_asc">佣金↑</option>
+              <option value="commission_desc">洗码费↓</option>
+              <option value="commission_asc">洗码费↑</option>
               <option value="players_desc">玩家数↓</option>
               <option value="players_asc">玩家数↑</option>
             </select>
@@ -7607,7 +7607,7 @@ async function renderReports(container) {
           <p class="text-lg font-bold" id="agent-total-profit">-</p>
         </div>
         <div class="text-center">
-          <p class="text-gray-400 text-xs">代理佣金</p>
+          <p class="text-gray-400 text-xs">代理洗码费</p>
           <p class="text-lg font-bold text-yellow-400" id="agent-total-commission">-</p>
         </div>
         <div class="text-center">
@@ -7625,7 +7625,7 @@ async function renderReports(container) {
               <th class="text-right p-3">玩家数</th>
               <th class="text-right p-3">总投注</th>
               <th class="text-right p-3">公司盈亏</th>
-              <th class="text-right p-3">代理佣金</th>
+              <th class="text-right p-3">代理洗码费</th>
               <th class="text-right p-3">净利润</th>
             </tr>
           </thead>
@@ -7739,7 +7739,7 @@ async function renderReports(container) {
             <p class="text-2xl font-bold" id="profit-gross">-</p>
           </div>
           <div class="bg-gray-700 rounded-lg p-4 text-center">
-            <p class="text-gray-400 text-xs mb-1">佣金支出</p>
+            <p class="text-gray-400 text-xs mb-1">洗码费支出</p>
             <p class="text-2xl font-bold text-yellow-400" id="profit-commission">-</p>
           </div>
           <div class="bg-gray-700 rounded-lg p-4 text-center">
@@ -7767,7 +7767,7 @@ async function renderReports(container) {
                   <th class="text-right p-3 text-xs">总投注</th>
                   <th class="text-right p-3 text-xs">有效投注</th>
                   <th class="text-right p-3 text-xs">毛利润</th>
-                  <th class="text-right p-3 text-xs">佣金</th>
+                  <th class="text-right p-3 text-xs">洗码费</th>
                   <th class="text-right p-3 text-xs">代理应得</th>
                   <th class="text-right p-3 text-xs">公司留存</th>
                 </tr>
@@ -8070,7 +8070,7 @@ async function renderReports(container) {
           <p class="text-lg font-bold text-yellow-400" id="settle-stat-valid-bet">-</p>
         </div>
         <div class="text-center">
-          <p class="text-gray-400 text-xs">总佣金</p>
+          <p class="text-gray-400 text-xs">总洗码费</p>
           <p class="text-lg font-bold text-orange-400" id="settle-stat-commission">-</p>
         </div>
         <div class="text-center">
@@ -8088,8 +8088,8 @@ async function renderReports(container) {
               <th class="text-right p-3 font-medium">投注金额</th>
               <th class="text-right p-3 font-medium">会员输赢</th>
               <th class="text-right p-3 font-medium">有效投注</th>
-              <th class="text-right p-3 font-medium border-l border-gray-600">佣金比</th>
-              <th class="text-right p-3 font-medium">佣金</th>
+              <th class="text-right p-3 font-medium border-l border-gray-600">洗码率</th>
+              <th class="text-right p-3 font-medium">洗码费</th>
               <th class="text-right p-3 font-medium border-l border-gray-600">占成比</th>
               <th class="text-right p-3 font-medium">占成收</th>
               <th class="text-right p-3 font-medium border-l border-gray-600">上级交收</th>
@@ -13739,11 +13739,11 @@ function showAgentDetailModal(agent) {
                 <span class="font-mono ${((agent.total_bet || 0) - (agent.total_payout || 0)) >= 0 ? 'text-green-400' : 'text-red-400'}">${formatCurrency((agent.total_bet || 0) - (agent.total_payout || 0))}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-400">佣金比例:</span>
+                <span class="text-gray-400">洗码率:</span>
                 <span class="font-bold text-yellow-400">${(agent.commission_rate || 0) * 100}%</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-400">累计佣金:</span>
+                <span class="text-gray-400">累计洗码费:</span>
                 <span class="font-mono text-orange-400">${formatCurrency(agent.total_commission || 0)}</span>
               </div>
               <div class="flex justify-between">
@@ -14580,7 +14580,7 @@ function getTransactionTypeBadge(type) {
     'transfer_in': { text: '转入', color: 'bg-purple-600' },
     'transfer_out': { text: '转出', color: 'bg-orange-600' },
     'bonus': { text: '红利', color: 'bg-pink-600' },
-    'commission': { text: '佣金', color: 'bg-indigo-600' },
+    'commission': { text: '洗码费', color: 'bg-indigo-600' },
     'adjust': { text: '调整', color: 'bg-gray-600' }
   };
   const t = types[type] || { text: type, color: 'bg-gray-600' };
@@ -15010,7 +15010,7 @@ async function editAgent(agentId) {
                 class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary">
             </div>
             <div>
-              <label class="block text-sm font-medium mb-2">佣金比例 (%)</label>
+              <label class="block text-sm font-medium mb-2">洗码率 (%)</label>
               <input type="number" name="commission_rate" value="${(agent.commission_rate || 0) * 100}" 
                 min="0" max="100" step="0.01" 
                 class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary">
@@ -15043,7 +15043,7 @@ async function editAgent(agentId) {
       e.preventDefault();
       const formData = new FormData(e.target);
       const data = Object.fromEntries(formData);
-      // 转换佣金比例为小数
+      // 转换洗码率为小数
       data.commission_rate = parseFloat(data.commission_rate) / 100;
       
       try {
@@ -15115,7 +15115,7 @@ async function viewAgentPerformance(agentId) {
               <div class="text-xl font-bold">${formatCurrency(performance.total_bet || 0)}</div>
             </div>
             <div class="bg-gradient-to-br from-orange-600 to-orange-700 rounded-lg p-4">
-              <div class="text-sm text-orange-200 mb-1">总佣金</div>
+              <div class="text-sm text-orange-200 mb-1">总洗码费</div>
               <div class="text-xl font-bold">${formatCurrency(performance.total_commission || 0)}</div>
             </div>
           </div>
@@ -15137,7 +15137,7 @@ async function viewAgentPerformance(agentId) {
                 </div>
               </div>
               <div>
-                <div class="text-sm text-gray-400 mb-1">月度佣金</div>
+                <div class="text-sm text-gray-400 mb-1">月度洗码费</div>
                 <div class="text-xl font-mono text-yellow-400">${formatCurrency(performance.month_commission || 0)}</div>
               </div>
             </div>
