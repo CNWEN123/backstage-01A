@@ -709,7 +709,21 @@ function renderPlayersTable(players, pagination) {
 // 踢出玩家
 async function kickPlayer(playerId) {
   if (!confirm('确定要将该玩家踢出登录吗？')) return;
-  alert('踢线功能开发中...');
+  
+  try {
+    const result = await api(`/api/players/${playerId}/kick`, { method: 'POST' });
+    if (result.success) {
+      showToast('玩家已被踢出登录', 'success');
+      // 刷新玩家列表
+      if (typeof loadPlayers === 'function') {
+        loadPlayers();
+      }
+    } else {
+      showToast(result.error || '踢线失败', 'error');
+    }
+  } catch (error) {
+    showToast('踢线失败: ' + error.message, 'error');
+  }
 }
 
 async function viewPlayer(id) {
@@ -12066,6 +12080,9 @@ function showPlayerDetailModal(player) {
           <button onclick="showPlayerMoreActions(${player.id})" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-sm font-medium transition-all">
             <i class="fas fa-ellipsis-h mr-1.5"></i>更多
           </button>
+          <button onclick="handleKickPlayer(${player.id}, '${escapeJs(player.username)}')" class="px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-sm font-medium transition-all shadow-lg">
+            <i class="fas fa-user-slash mr-1.5"></i>踢线
+          </button>
         </div>
       </div>
       
@@ -12520,5 +12537,30 @@ async function loadAgentsForSelect() {
     }
   } catch (error) {
     console.error('Error loading agents:', error);
+  }
+}
+
+// 玩家详情弹窗中的踢线功能
+async function handleKickPlayer(playerId, username) {
+  if (!confirm(`确定要将玩家「${username}」踢出登录吗？\n\n踢线后该玩家将被强制下线，需要重新登录才能继续游戏。`)) return;
+  
+  try {
+    const result = await api(`/api/players/${playerId}/kick`, { method: 'POST' });
+    if (result.success) {
+      showToast(`玩家「${username}」已被踢出登录`, 'success');
+      
+      // 关闭玩家详情弹窗
+      closePlayerDetailModal();
+      
+      // 刷新玩家列表
+      if (typeof loadPlayers === 'function') {
+        loadPlayers();
+      }
+    } else {
+      showToast(result.error || '踢线失败', 'error');
+    }
+  } catch (error) {
+    console.error('Kick player error:', error);
+    showToast('踢线失败: ' + error.message, 'error');
   }
 }
