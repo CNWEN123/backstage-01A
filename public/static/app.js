@@ -588,13 +588,13 @@ async function renderPlayers(container) {
               <td class="p-4">${p.id}</td>
               <td class="p-4">
                 <div>
-                  <p class="font-medium">${p.username}</p>
+                  <p class="font-medium">${playerLink(p.id, p.username)}</p>
                   <p class="text-sm text-gray-400">${p.nickname || '-'}</p>
                 </div>
               </td>
               <td class="p-4 font-mono ${p.balance > 10000 ? 'text-green-400' : ''}">${formatCurrency(p.balance)}</td>
               <td class="p-4"><span class="bg-purple-600 px-2 py-1 rounded text-xs">VIP${p.vip_level}</span></td>
-              <td class="p-4">${p.agent_name || '-'}</td>
+              <td class="p-4">${p.agent_id ? agentLink(p.agent_id, p.agent_name) : '-'}</td>
               <td class="p-4">${getRiskBadge(p.risk_level)}</td>
               <td class="p-4">${getStatusBadge(p.status)}</td>
               <td class="p-4">
@@ -1402,8 +1402,7 @@ async function renderFinance(container) {
             <tr class="border-t border-gray-700">
               <td class="p-4 font-mono text-sm">${w.order_no}</td>
               <td class="p-4">
-                <p class="font-medium">${w.player_name}</p>
-                <p class="text-sm text-gray-400">VIP${w.vip_level || 0}</p>
+                <p class="font-medium">${playerLink(w.player_id, w.player_name, w.vip_level || 0)}</p>
               </td>
               <td class="p-4 font-mono text-red-400">${formatCurrency(w.amount)}</td>
               <td class="p-4">
@@ -1448,8 +1447,7 @@ async function renderFinance(container) {
             <tr class="border-t border-gray-700">
               <td class="p-4 font-mono text-sm">${d.order_no}</td>
               <td class="p-4">
-                <p class="font-medium">${d.player_name}</p>
-                <p class="text-sm text-gray-400">VIP${d.vip_level || 0}</p>
+                <p class="font-medium">${playerLink(d.player_id, d.player_name, d.vip_level || 0)}</p>
               </td>
               <td class="p-4 font-mono text-green-400">${formatCurrency(d.amount)}</td>
               <td class="p-4">${d.payment_channel || d.payment_method || '-'}</td>
@@ -1611,7 +1609,7 @@ async function renderFinance(container) {
           ${transactions.map(t => `
             <tr class="border-t border-gray-700">
               <td class="p-4 font-mono text-sm">${t.order_no}</td>
-              <td class="p-4">${t.player_name || '-'}</td>
+              <td class="p-4">${t.player_id ? playerLink(t.player_id, t.player_name) : (t.player_name || '-')}</td>
               <td class="p-4"><span class="px-2 py-1 rounded text-xs ${t.amount >= 0 ? 'bg-green-600' : 'bg-red-600'}">${getTransactionTypeName(t.transaction_type)}</span></td>
               <td class="p-4 font-mono">${formatCurrency(t.balance_before)}</td>
               <td class="p-4 font-mono ${t.amount >= 0 ? 'text-green-400' : 'text-red-400'}">${t.amount >= 0 ? '+' : ''}${formatCurrency(t.amount)}</td>
@@ -7400,8 +7398,8 @@ async function loadRanking() {
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-gray-400' : idx === 2 ? 'bg-orange-600' : 'bg-gray-600'} flex items-center justify-center font-bold">${idx + 1}</div>
           <div>
-            <p class="font-medium">${escapeHtml(p.username)} <span class="text-xs text-purple-400">VIP${p.vip_level || 0}</span></p>
-            <p class="text-xs text-gray-400">代理: ${escapeHtml(p.agent_username || '直属')}</p>
+            <p class="font-medium">${playerLink(p.player_id, p.username, p.vip_level || 0)}</p>
+            <p class="text-xs text-gray-400">代理: ${p.agent_id ? agentLink(p.agent_id, p.agent_username) : '直属'}</p>
           </div>
         </div>
         <div class="text-right">
@@ -7420,8 +7418,8 @@ async function loadRanking() {
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center font-bold">${idx + 1}</div>
           <div>
-            <p class="font-medium">${escapeHtml(p.username)} <span class="text-xs text-purple-400">VIP${p.vip_level || 0}</span></p>
-            <p class="text-xs text-gray-400">代理: ${escapeHtml(p.agent_username || '直属')}</p>
+            <p class="font-medium">${playerLink(p.player_id, p.username, p.vip_level || 0)}</p>
+            <p class="text-xs text-gray-400">代理: ${p.agent_id ? agentLink(p.agent_id, p.agent_username) : '直属'}</p>
           </div>
         </div>
         <div class="text-right">
@@ -7639,8 +7637,7 @@ async function loadBetDetails(page = 1) {
         <tr class="border-t border-gray-700 hover:bg-gray-750">
           <td class="p-3 font-mono text-xs text-primary">${escapeHtml(b.bet_no || '-')}</td>
           <td class="p-3">
-            <p class="font-medium text-sm">${escapeHtml(b.username || '-')}</p>
-            <p class="text-xs text-gray-400">VIP${b.vip_level || 0}</p>
+            <p class="font-medium text-sm">${b.player_id ? playerLink(b.player_id, b.username, b.vip_level || 0) : escapeHtml(b.username || '-')}</p>
           </td>
           <td class="p-3">${getGameTypeName(b.game_type)}</td>
           <td class="p-3 font-mono text-xs text-cyan-400">${escapeHtml(b.game_round || '-')}</td>
@@ -7794,7 +7791,7 @@ async function loadAgentPerformance() {
       return `
         <tr class="border-t border-gray-700 hover:bg-gray-750">
           <td class="p-3">
-            <p class="font-medium text-white">${escapeHtml(a.agent_username)}</p>
+            <p class="font-medium text-white">${agentLink(a.agent_id, a.agent_username)}</p>
             <p class="text-xs text-gray-400">ID: ${a.agent_id || '-'} ${a.nickname ? '| ' + escapeHtml(a.nickname) : ''}</p>
           </td>
           <td class="p-3">
@@ -12563,4 +12560,50 @@ async function handleKickPlayer(playerId, username) {
     console.error('Kick player error:', error);
     showToast('踢线失败: ' + error.message, 'error');
   }
+}
+
+// 生成可点击的账号链接（通用函数）
+// type: 'player' | 'agent' | 'shareholder'
+// id: 账号ID
+// name: 账号名称
+// extraInfo: 额外信息（如VIP等级等）
+function makeAccountClickable(type, id, name, extraInfo = '') {
+  if (!id || !name) return escapeHtml(name || '-');
+  
+  const escapedName = escapeHtml(name);
+  const escapedExtra = extraInfo ? ' ' + escapeHtml(extraInfo) : '';
+  
+  let onclickHandler = '';
+  switch(type) {
+    case 'player':
+      onclickHandler = `viewPlayer(${id})`;
+      break;
+    case 'agent':
+      onclickHandler = `viewAgent(${id})`;
+      break;
+    case 'shareholder':
+      onclickHandler = `viewAgent(${id})`; // 股东也使用代理查看
+      break;
+    default:
+      return escapedName + escapedExtra;
+  }
+  
+  return `<a href="javascript:void(0)" onclick="${onclickHandler}" class="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer transition-colors">${escapedName}</a>${escapedExtra}`;
+}
+
+// 快捷函数：生成玩家账号链接
+function playerLink(playerId, playerName, vipLevel = null) {
+  const extraInfo = vipLevel !== null ? `<span class="text-xs text-purple-400 ml-1">VIP${vipLevel}</span>` : '';
+  return makeAccountClickable('player', playerId, playerName, extraInfo);
+}
+
+// 快捷函数：生成代理账号链接
+function agentLink(agentId, agentName, level = null) {
+  const extraInfo = level !== null ? `<span class="text-xs text-gray-400 ml-1">L${level}</span>` : '';
+  return makeAccountClickable('agent', agentId, agentName, extraInfo);
+}
+
+// 快捷函数：生成股东账号链接
+function shareholderLink(shareholderId, shareholderName) {
+  return makeAccountClickable('shareholder', shareholderId, shareholderName);
 }
