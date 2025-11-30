@@ -1309,7 +1309,7 @@ async function showEditAgentModal(agentId) {
           </div>
           
           <div>
-            <label class="block text-sm text-gray-400 mb-2">级别</label>
+            <label class="block text-sm text-gray-400 mb-2">角色</label>
             <select name="level" id="edit-agent-level-select" onchange="updateEditParentAgentOptions(${agentId})" class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2">
               <option value="shareholder" ${agent.level === 'shareholder' ? 'selected' : ''}>股东</option>
               <option value="general_agent" ${agent.level === 'general_agent' ? 'selected' : ''}>总代理</option>
@@ -1514,12 +1514,12 @@ function showAddAgentModal() {
           </div>
           
           <div>
-            <label class="block text-sm text-gray-400 mb-2">级别 <span class="text-red-500">*</span></label>
+            <label class="block text-sm text-gray-400 mb-2">角色 <span class="text-red-500">*</span></label>
             <select name="level" id="agent-level-select" onchange="updateParentAgentOptions()" required class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2">
-              <option value="">请选择级别</option>
-              <option value="agent">代理</option>
-              <option value="general_agent">总代理</option>
+              <option value="">请选择角色</option>
               <option value="shareholder">股东</option>
+              <option value="general_agent">总代理</option>
+              <option value="agent">代理</option>
             </select>
           </div>
           
@@ -14301,29 +14301,25 @@ async function updateParentAgentOptions() {
   // 清空当前选项
   parentSelect.innerHTML = '<option value="">加载中...</option>';
   
-  // 根据级别设置提示和要求
-  let parentLevel = '';
-  let isRequired = true;
+  // 根据角色设置提示和要求
   let hint = '';
+  let isRequired = true;
   
   switch(selectedLevel) {
-    case 'agent':
-      parentLevel = 'general_agent';
-      hint = '(必须选择总代理)';
-      isRequired = true;
-      break;
-    case 'general_agent':
-      parentLevel = 'shareholder';
-      hint = '(必须选择股东)';
-      isRequired = true;
-      break;
     case 'shareholder':
-      parentLevel = '';
       hint = '(股东无需上级)';
       isRequired = false;
       break;
+    case 'general_agent':
+      hint = '(需要选择上级：股东)';
+      isRequired = true;
+      break;
+    case 'agent':
+      hint = '(需要选择上级：股东或总代理)';
+      isRequired = true;
+      break;
     default:
-      parentSelect.innerHTML = '<option value="">请先选择级别</option>';
+      parentSelect.innerHTML = '<option value="">请先选择角色</option>';
       parentHint.textContent = '';
       return;
   }
@@ -14345,9 +14341,20 @@ async function updateParentAgentOptions() {
     return;
   }
   
-  // 加载对应级别的代理列表
+  // 加载可选的上级代理列表
   try {
-    const result = await api(`/api/agents?level=${parentLevel}&status=1`);
+    let queryParams = 'status=1';
+    
+    // 总代理只能选择股东作为上级
+    if (selectedLevel === 'general_agent') {
+      queryParams += '&level=shareholder';
+    }
+    // 代理可以选择股东或总代理作为上级
+    else if (selectedLevel === 'agent') {
+      queryParams += '&level=shareholder,general_agent';
+    }
+    
+    const result = await api(`/api/agents?${queryParams}`);
     
     if (!result.success) {
       parentSelect.innerHTML = '<option value="">加载失败</option>';
@@ -14358,18 +14365,34 @@ async function updateParentAgentOptions() {
     const agents = result.data || [];
     
     if (agents.length === 0) {
-      const levelName = parentLevel === 'general_agent' ? '总代理' : '股东';
-      parentSelect.innerHTML = `<option value="">暂无可选的${levelName}</option>`;
-      showToast(`系统中暂无${levelName}，请先创建${levelName}账号`, 'warning');
+      parentSelect.innerHTML = '<option value="">暂无可用上级</option>';
+      showToast('系统中暂无可用上级代理，请先创建股东或总代理账号', 'warning');
       return;
     }
     
-    // 生成选项
-    parentSelect.innerHTML = '<option value="">请选择上级代理</option>' + 
-      agents.map(agent => 
+    // 生成选项（按角色分组显示）
+    const shareholders = agents.filter(a => a.level === 'shareholder');
+    const generalAgents = agents.filter(a => a.level === 'general_agent');
+    
+    let optionsHTML = '<option value="">请选择上级代理</option>';
+    
+    if (shareholders.length > 0) {
+      optionsHTML += '<optgroup label="股东">';
+      optionsHTML += shareholders.map(agent => 
         `<option value="${agent.id}">${escapeHtml(agent.agent_username || agent.username)} (ID:${agent.id})</option>`
       ).join('');
+      optionsHTML += '</optgroup>';
+    }
     
+    if (generalAgents.length > 0 && selectedLevel === 'agent') {
+      optionsHTML += '<optgroup label="总代理">';
+      optionsHTML += generalAgents.map(agent => 
+        `<option value="${agent.id}">${escapeHtml(agent.agent_username || agent.username)} (ID:${agent.id})</option>`
+      ).join('');
+      optionsHTML += '</optgroup>';
+    }
+    
+    parentSelect.innerHTML = optionsHTML;
     parentSelect.disabled = false;
     
   } catch (error) {
@@ -14394,11 +14417,10 @@ function validateAgentHierarchy() {
     return true;
   }
   
-  // 代理和总代理必须有上级
+  // 总代理和代理必须有上级
   if ((level === 'agent' || level === 'general_agent') && !parentId) {
     const levelName = level === 'agent' ? '代理' : '总代理';
-    const parentLevelName = level === 'agent' ? '总代理' : '股东';
-    showToast(`${levelName}必须绑定在${parentLevelName}下`, 'error');
+    showToast(`${levelName}必须选择上级代理`, 'error');
     return false;
   }
   
@@ -14467,29 +14489,25 @@ async function updateEditParentAgentOptions(agentId, currentParentId = null) {
   // 清空当前选项
   parentSelect.innerHTML = '<option value="">加载中...</option>';
   
-  // 根据级别设置提示和要求
-  let parentLevel = '';
-  let isRequired = true;
+  // 根据角色设置提示和要求
   let hint = '';
+  let isRequired = true;
   
   switch(selectedLevel) {
-    case 'agent':
-      parentLevel = 'general_agent';
-      hint = '(必须选择总代理)';
-      isRequired = true;
-      break;
-    case 'general_agent':
-      parentLevel = 'shareholder';
-      hint = '(必须选择股东)';
-      isRequired = true;
-      break;
     case 'shareholder':
-      parentLevel = '';
       hint = '(股东无需上级)';
       isRequired = false;
       break;
+    case 'general_agent':
+      hint = '(需要选择上级：股东)';
+      isRequired = true;
+      break;
+    case 'agent':
+      hint = '(需要选择上级：股东或总代理)';
+      isRequired = true;
+      break;
     default:
-      parentSelect.innerHTML = '<option value="">请先选择级别</option>';
+      parentSelect.innerHTML = '<option value="">请先选择角色</option>';
       parentHint.textContent = '';
       return;
   }
@@ -14511,9 +14529,20 @@ async function updateEditParentAgentOptions(agentId, currentParentId = null) {
     return;
   }
   
-  // 加载对应级别的代理列表
+  // 加载可选的上级代理列表
   try {
-    const result = await api(`/api/agents?level=${parentLevel}&status=1`);
+    let queryParams = 'status=1';
+    
+    // 总代理只能选择股东作为上级
+    if (selectedLevel === 'general_agent') {
+      queryParams += '&level=shareholder';
+    }
+    // 代理可以选择股东或总代理作为上级
+    else if (selectedLevel === 'agent') {
+      queryParams += '&level=shareholder,general_agent';
+    }
+    
+    const result = await api(`/api/agents?${queryParams}`);
     
     if (!result.success) {
       parentSelect.innerHTML = '<option value="">加载失败</option>';
@@ -14527,18 +14556,34 @@ async function updateEditParentAgentOptions(agentId, currentParentId = null) {
     const filteredAgents = agents.filter(agent => agent.id !== agentId);
     
     if (filteredAgents.length === 0) {
-      const levelName = parentLevel === 'general_agent' ? '总代理' : '股东';
-      parentSelect.innerHTML = `<option value="">暂无可选的${levelName}</option>`;
-      showToast(`系统中暂无${levelName}，请先创建${levelName}账号`, 'warning');
+      parentSelect.innerHTML = '<option value="">暂无可用上级</option>';
+      showToast('系统中暂无可用上级代理', 'warning');
       return;
     }
     
-    // 生成选项
-    parentSelect.innerHTML = '<option value="">请选择上级代理</option>' + 
-      filteredAgents.map(agent => 
+    // 生成选项（按角色分组显示）
+    const shareholders = filteredAgents.filter(a => a.level === 'shareholder');
+    const generalAgents = filteredAgents.filter(a => a.level === 'general_agent');
+    
+    let optionsHTML = '<option value="">请选择上级代理</option>';
+    
+    if (shareholders.length > 0) {
+      optionsHTML += '<optgroup label="股东">';
+      optionsHTML += shareholders.map(agent => 
         `<option value="${agent.id}" ${agent.id === currentParentId ? 'selected' : ''}>${escapeHtml(agent.agent_username || agent.username)} (ID:${agent.id})</option>`
       ).join('');
+      optionsHTML += '</optgroup>';
+    }
     
+    if (generalAgents.length > 0 && selectedLevel === 'agent') {
+      optionsHTML += '<optgroup label="总代理">';
+      optionsHTML += generalAgents.map(agent => 
+        `<option value="${agent.id}" ${agent.id === currentParentId ? 'selected' : ''}>${escapeHtml(agent.agent_username || agent.username)} (ID:${agent.id})</option>`
+      ).join('');
+      optionsHTML += '</optgroup>';
+    }
+    
+    parentSelect.innerHTML = optionsHTML;
     parentSelect.disabled = false;
     
   } catch (error) {
@@ -14563,11 +14608,10 @@ function validateEditAgentHierarchy() {
     return true;
   }
   
-  // 代理和总代理必须有上级
+  // 总代理和代理必须有上级
   if ((level === 'agent' || level === 'general_agent') && !parentId) {
     const levelName = level === 'agent' ? '代理' : '总代理';
-    const parentLevelName = level === 'agent' ? '总代理' : '股东';
-    showToast(`${levelName}必须绑定在${parentLevelName}下`, 'error');
+    showToast(`${levelName}必须选择上级代理`, 'error');
     return false;
   }
   
