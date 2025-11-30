@@ -7883,7 +7883,7 @@ function switchReportTab(tab) {
   // 根据标签自动加载数据
   switch(tab) {
     case 'bet-details': loadBetDetails(); break;
-    case 'settle': loadSettlementReport(); break;
+    case 'settle': loadSettleReport(); break;
     case 'profit-share': loadComprehensive(); break;
     case 'ranking': loadRanking(); break;
     case 'game-report': loadGameRevenue(); break;
@@ -8057,129 +8057,6 @@ async function loadProfitAnalysis() {
 }
 
 // 加载对账结算报表
-async function loadSettlementReport() {
-  const startDate = document.getElementById('settle-start-date')?.value || dayjs().subtract(30, 'day').format('YYYY-MM-DD');
-  const endDate = document.getElementById('settle-end-date')?.value || dayjs().format('YYYY-MM-DD');
-  const agentId = document.getElementById('settle-agent')?.value || '';
-  const tbody = document.getElementById('settle-tbody');
-  
-  if (tbody) {
-    tbody.innerHTML = '<tr><td colspan="12" class="p-8 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>加载中...</td></tr>';
-  }
-  
-  try {
-    let url = `/api/reports/settlement?start_date=${startDate}&end_date=${endDate}`;
-    if (agentId) url += `&agent_id=${agentId}`;
-    
-    const result = await api(url);
-    if (result.success) {
-      const { data, summary } = result;
-      
-      // 更新汇总
-      document.getElementById('settle-bet-count').textContent = formatNumber(summary.bet_count || 0);
-      document.getElementById('settle-total-bet').textContent = formatCurrency(summary.total_bet || 0);
-      document.getElementById('settle-valid-bet').textContent = formatCurrency(summary.total_valid_bet || 0);
-      
-      const grossEl = document.getElementById('settle-gross');
-      grossEl.textContent = (summary.gross_profit >= 0 ? '+' : '') + formatCurrency(summary.gross_profit || 0);
-      grossEl.className = `text-lg font-bold ${summary.gross_profit >= 0 ? 'text-green-400' : 'text-red-400'}`;
-      
-      document.getElementById('settle-agent-share').textContent = formatCurrency(summary.agent_share || 0);
-      
-      const companyEl = document.getElementById('settle-company-share');
-      companyEl.textContent = (summary.company_share >= 0 ? '+' : '') + formatCurrency(summary.company_share || 0);
-      companyEl.className = `text-lg font-bold ${summary.company_share >= 0 ? 'text-green-400' : 'text-red-400'}`;
-      
-      if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="12" class="p-8 text-center text-gray-400">暂无数据</td></tr>';
-        return;
-      }
-      
-      tbody.innerHTML = data.map(s => {
-        const shareRatio = (s.share_ratio || 0) * 100;
-        return `
-          <tr class="border-t border-gray-700 hover:bg-gray-750">
-            <td class="p-3">${s.settle_date}</td>
-            <td class="p-3 font-mono text-sm text-primary">${escapeHtml(s.agent_username || '直属')}</td>
-            <td class="p-3">${escapeHtml(s.agent_name || '-')}</td>
-            <td class="p-3 text-right">${formatNumber(s.player_count || 0)}</td>
-            <td class="p-3 text-right">${formatNumber(s.bet_count || 0)}</td>
-            <td class="p-3 text-right font-mono">${formatCurrency(s.total_bet || 0)}</td>
-            <td class="p-3 text-right font-mono text-gray-400">${formatCurrency(s.total_valid_bet || 0)}</td>
-            <td class="p-3 text-right font-mono">${formatCurrency(s.total_payout || 0)}</td>
-            <td class="p-3 text-right font-mono ${(s.gross_profit || 0) >= 0 ? 'text-green-400' : 'text-red-400'}">${(s.gross_profit || 0) >= 0 ? '+' : ''}${formatCurrency(s.gross_profit || 0)}</td>
-            <td class="p-3 text-right text-yellow-400">${shareRatio.toFixed(1)}%</td>
-            <td class="p-3 text-right font-mono text-orange-400">${formatCurrency(s.agent_share || 0)}</td>
-            <td class="p-3 text-right font-mono ${(s.company_share || 0) >= 0 ? 'text-green-400' : 'text-red-400'}">${formatCurrency(s.company_share || 0)}</td>
-          </tr>
-        `;
-      }).join('');
-    } else {
-      tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-red-400">加载失败: ${result.error}</td></tr>`;
-    }
-  } catch (error) {
-    tbody.innerHTML = '<tr><td colspan="12" class="p-8 text-center text-red-400">加载失败，请稍后重试</td></tr>';
-  }
-}
-
-// 加载游戏报表
-async function loadGameReport() {
-  const startDate = document.getElementById('game-start-date')?.value || dayjs().subtract(7, 'day').format('YYYY-MM-DD');
-  const endDate = document.getElementById('game-end-date')?.value || dayjs().format('YYYY-MM-DD');
-  const tbody = document.getElementById('game-tbody');
-  
-  try {
-    const result = await api(`/api/reports/game?start_date=${startDate}&end_date=${endDate}`);
-    if (result.success) {
-      const data = result.data || [];
-      
-      if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-gray-400">暂无数据</td></tr>';
-        return;
-      }
-      
-      tbody.innerHTML = data.map(g => `
-        <tr class="border-t border-gray-700">
-          <td class="py-3">${getGameTypeName(g.game_type)}</td>
-          <td class="py-3 text-right font-mono">${formatCurrency(g.total_bet)}</td>
-          <td class="py-3 text-right font-mono text-gray-400">${formatCurrency(g.total_valid_bet)}</td>
-          <td class="py-3 text-right font-mono ${g.profit >= 0 ? 'text-green-400' : 'text-red-400'}">${g.profit >= 0 ? '+' : ''}${formatCurrency(g.profit)}</td>
-          <td class="py-3 text-right">${formatNumber(g.bet_count)}</td>
-          <td class="py-3 text-right text-primary">${g.percentage || 0}%</td>
-        </tr>
-      `).join('');
-      
-      // 更新图表
-      const ctx = document.getElementById('gameChart');
-      if (ctx && data.length > 0) {
-        if (window.gameChartInstance) {
-          window.gameChartInstance.destroy();
-        }
-        window.gameChartInstance = new Chart(ctx, {
-          type: 'doughnut',
-          data: {
-            labels: data.map(g => getGameTypeName(g.game_type)),
-            datasets: [{
-              data: data.map(g => g.total_bet),
-              backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: { position: 'bottom', labels: { color: '#9ca3af' } }
-            }
-          }
-        });
-      }
-    } else {
-      tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-red-400">加载失败: ${result.error}</td></tr>`;
-    }
-  } catch (error) {
-    tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-red-400">加载失败，请稍后重试</td></tr>';
-  }
-}
-
 // 加载盈亏排行榜
 async function loadLeaderboard() {
   const days = document.getElementById('rank-days')?.value || '7';
