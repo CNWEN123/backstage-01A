@@ -517,6 +517,14 @@ async function renderPlayers(container) {
   const stats = result.stats || { total: players.length, online: 0, offline: players.length };
   
   container.innerHTML = `
+    <!-- Tabs -->
+    <div class="flex flex-wrap gap-2 mb-6">
+      <button id="tab-player-list" onclick="switchPlayerTab('list')" class="px-4 py-2 bg-primary rounded-lg">玩家管理</button>
+      <button id="tab-vip-config" onclick="switchPlayerTab('vip-config')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600"><i class="fas fa-crown text-yellow-400 mr-1"></i>VIP等级配置</button>
+    </div>
+    
+    <!-- 玩家管理 -->
+    <div id="player-list">`
     <!-- 在线统计卡片 -->
     <div class="grid grid-cols-3 gap-4 mb-6">
       <div class="bg-gray-800 rounded-xl p-4 flex items-center">
@@ -621,7 +629,41 @@ async function renderPlayers(container) {
         <button class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">下一页</button>
       </div>
     </div>
+    </div>
+    
+    <!-- VIP等级配置 -->
+    <div id="player-vip-config" class="hidden">
+      <!-- 说明卡片 -->
+      <div class="bg-gradient-to-r from-yellow-600 to-orange-600 rounded-xl p-4 mb-6 flex items-center">
+        <i class="fas fa-crown text-yellow-300 text-3xl mr-4"></i>
+        <div>
+          <h3 class="font-bold text-white text-lg">VIP等级规则配置</h3>
+          <p class="text-sm text-yellow-100 mt-1">配置不同VIP等级的升级条件、专属权益和晋升要求</p>
+        </div>
+      </div>
+      
+      <!-- 添加按钮 -->
+      <div class="mb-6 flex justify-between items-center">
+        <div>
+          <h3 class="text-xl font-bold"><i class="fas fa-list-alt text-primary mr-2"></i>VIP等级列表</h3>
+          <p class="text-sm text-gray-400 mt-1">系统支持最多10个VIP等级</p>
+        </div>
+        <button onclick="showAddVipLevelModal()" class="bg-primary hover:bg-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-lg transition-all">
+          <i class="fas fa-plus mr-2"></i>新增VIP等级
+        </button>
+      </div>
+      
+      <!-- VIP等级卡片网格 -->
+      <div id="vip-levels-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="text-center text-gray-400 py-8 col-span-full">
+          <i class="fas fa-spinner fa-spin mr-2"></i>加载中...
+        </div>
+      </div>
+    </div>
   `;
+  
+  // 加载VIP等级配置
+  loadVipLevels();
 }
 
 // 按在线状态筛选
@@ -12606,4 +12648,391 @@ function agentLink(agentId, agentName, level = null) {
 // 快捷函数：生成股东账号链接
 function shareholderLink(shareholderId, shareholderName) {
   return makeAccountClickable('shareholder', shareholderId, shareholderName);
+}
+
+// ==========================================
+// VIP等级管理功能
+// ==========================================
+
+// 切换玩家标签页
+function switchPlayerTab(tab) {
+  // 隐藏所有标签内容
+  document.querySelectorAll('[id^="player-"]').forEach(el => {
+    if (el.id === 'player-search' || el.id === 'player-status' || el.id === 'player-vip' || el.id === 'player-risk' || el.id === 'player-online-status') {
+      return; // 跳过搜索框等输入元素
+    }
+    el.classList.add('hidden');
+  });
+  
+  // 移除所有标签按钮的active状态
+  document.querySelectorAll('[id^="tab-player-"]').forEach(el => {
+    el.classList.remove('bg-primary');
+    el.classList.add('bg-gray-700');
+  });
+  
+  // 显示选中的标签内容
+  const contentId = tab === 'list' ? 'player-list' : 'player-vip-config';
+  document.getElementById(contentId).classList.remove('hidden');
+  
+  // 激活选中的标签按钮
+  const tabButtonId = tab === 'list' ? 'tab-player-list' : 'tab-vip-config';
+  const tabButton = document.getElementById(tabButtonId);
+  tabButton.classList.add('bg-primary');
+  tabButton.classList.remove('bg-gray-700');
+  
+  // 如果切换到VIP配置，加载VIP等级列表
+  if (tab === 'vip-config') {
+    loadVipLevels();
+  }
+}
+
+// 加载VIP等级列表
+async function loadVipLevels() {
+  const grid = document.getElementById('vip-levels-grid');
+  if (!grid) return;
+  
+  grid.innerHTML = '<div class="text-center text-gray-400 py-8 col-span-full"><i class="fas fa-spinner fa-spin mr-2"></i>加载中...</div>';
+  
+  try {
+    const result = await api('/api/vip-levels');
+    if (!result.success) {
+      grid.innerHTML = `<div class="text-center text-red-400 py-8 col-span-full">${result.error || '加载失败'}</div>`;
+      return;
+    }
+    
+    const levels = result.data || [];
+    
+    if (levels.length === 0) {
+      grid.innerHTML = `
+        <div class="text-center text-gray-400 py-12 col-span-full">
+          <i class="fas fa-crown text-6xl mb-4 text-gray-600"></i>
+          <p class="text-lg">暂无VIP等级配置</p>
+          <p class="text-sm mt-2">点击右上角"新增VIP等级"按钮开始配置</p>
+        </div>
+      `;
+      return;
+    }
+    
+    grid.innerHTML = levels.map(level => {
+      const levelColors = [
+        'from-gray-500 to-gray-600',     // VIP0
+        'from-green-500 to-green-600',   // VIP1
+        'from-blue-500 to-blue-600',     // VIP2
+        'from-purple-500 to-purple-600', // VIP3
+        'from-pink-500 to-pink-600',     // VIP4
+        'from-red-500 to-red-600',       // VIP5
+        'from-orange-500 to-orange-600', // VIP6
+        'from-yellow-500 to-yellow-600', // VIP7
+        'from-cyan-500 to-cyan-600',     // VIP8
+        'from-indigo-500 to-indigo-600'  // VIP9
+      ];
+      
+      const colorClass = levelColors[level.level] || 'from-gray-500 to-gray-600';
+      
+      return `
+        <div class="bg-gray-800 rounded-xl overflow-hidden hover:shadow-2xl transition-all duration-300 ${level.is_active ? '' : 'opacity-60'}">
+          <!-- VIP等级头部 -->
+          <div class="bg-gradient-to-r ${colorClass} p-6 text-center relative">
+            <div class="absolute top-3 right-3">
+              ${level.is_active ? '<span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full">启用</span>' : '<span class="bg-gray-500 text-white text-xs px-2 py-1 rounded-full">禁用</span>'}
+            </div>
+            <i class="fas fa-crown text-white text-5xl mb-3"></i>
+            <h3 class="text-white text-2xl font-bold">${escapeHtml(level.level_name || 'VIP' + level.level)}</h3>
+            <p class="text-white text-opacity-90 text-sm mt-1">等级 ${level.level}</p>
+          </div>
+          
+          <!-- VIP等级详情 -->
+          <div class="p-5 space-y-3">
+            <!-- 升级条件 -->
+            <div class="bg-gray-700 rounded-lg p-3">
+              <p class="text-gray-400 text-xs mb-2"><i class="fas fa-chart-line mr-1"></i>升级条件</p>
+              <div class="space-y-1 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-300">累计充值:</span>
+                  <span class="text-green-400 font-medium">${formatCurrency(level.min_deposit || 0)}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-300">累计投注:</span>
+                  <span class="text-cyan-400 font-medium">${formatCurrency(level.min_bet || 0)}</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 专属权益 -->
+            <div class="bg-gray-700 rounded-lg p-3">
+              <p class="text-gray-400 text-xs mb-2"><i class="fas fa-gift mr-1"></i>专属权益</p>
+              <div class="space-y-1 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-300">升级红利:</span>
+                  <span class="text-yellow-400 font-medium">${formatCurrency(level.upgrade_bonus || 0)}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-300">每日红利:</span>
+                  <span class="text-yellow-400 font-medium">${formatCurrency(level.daily_bonus || 0)}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-300">返水比例:</span>
+                  <span class="text-blue-400 font-medium">${((level.rebate_rate || 0) * 100).toFixed(2)}%</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-300">提款限额:</span>
+                  <span class="text-purple-400 font-medium">${level.withdraw_limit ? formatCurrency(level.withdraw_limit) : '无限制'}</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 操作按钮 -->
+            <div class="flex gap-2 pt-2">
+              <button onclick="editVipLevel(${level.id})" class="flex-1 bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-lg text-sm font-medium transition-all">
+                <i class="fas fa-edit mr-1"></i>编辑
+              </button>
+              <button onclick="toggleVipLevel(${level.id}, ${level.is_active})" class="flex-1 bg-yellow-600 hover:bg-yellow-700 px-3 py-2 rounded-lg text-sm font-medium transition-all">
+                <i class="fas fa-${level.is_active ? 'pause' : 'play'} mr-1"></i>${level.is_active ? '禁用' : '启用'}
+              </button>
+              <button onclick="deleteVipLevel(${level.id}, '${escapeJs(level.level_name || 'VIP' + level.level)}')" class="bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg text-sm transition-all">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+  } catch (error) {
+    console.error('Load VIP levels error:', error);
+    grid.innerHTML = `<div class="text-center text-red-400 py-8 col-span-full">加载失败: ${error.message}</div>`;
+  }
+}
+
+// 显示新增VIP等级弹窗
+function showAddVipLevelModal() {
+  const modal = document.createElement('div');
+  modal.id = 'vip-level-modal';
+  modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4';
+  modal.onclick = (e) => { if (e.target === modal) closeVipLevelModal(); };
+  
+  modal.innerHTML = `
+    <div class="bg-gray-800 rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+      <!-- 标题栏 -->
+      <div class="bg-gradient-to-r from-yellow-600 to-orange-600 px-6 py-4 border-b border-gray-700 flex items-center justify-between sticky top-0 z-10">
+        <h3 class="text-xl font-bold text-white">
+          <i class="fas fa-crown mr-2"></i>新增VIP等级
+        </h3>
+        <button onclick="closeVipLevelModal()" class="text-white hover:text-gray-200 transition-colors">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      
+      <!-- 表单内容 -->
+      <form id="vip-level-form" class="p-6 space-y-6">
+        <!-- 基本信息 -->
+        <div>
+          <h4 class="font-semibold text-lg mb-4 text-primary"><i class="fas fa-info-circle mr-2"></i>基本信息</h4>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-gray-400 text-sm mb-2">VIP等级 <span class="text-red-400">*</span></label>
+              <input type="number" name="level" required min="0" max="9" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary" placeholder="0-9">
+            </div>
+            <div>
+              <label class="block text-gray-400 text-sm mb-2">等级名称 <span class="text-red-400">*</span></label>
+              <input type="text" name="level_name" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary" placeholder="如：青铜会员">
+            </div>
+          </div>
+        </div>
+        
+        <!-- 升级条件 -->
+        <div>
+          <h4 class="font-semibold text-lg mb-4 text-green-400"><i class="fas fa-chart-line mr-2"></i>升级条件</h4>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-gray-400 text-sm mb-2">最低累计充值 (¥)</label>
+              <input type="number" name="min_deposit" min="0" step="0.01" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary" placeholder="0">
+            </div>
+            <div>
+              <label class="block text-gray-400 text-sm mb-2">最低累计投注 (¥)</label>
+              <input type="number" name="min_bet" min="0" step="0.01" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary" placeholder="0">
+            </div>
+          </div>
+        </div>
+        
+        <!-- 专属权益 -->
+        <div>
+          <h4 class="font-semibold text-lg mb-4 text-yellow-400"><i class="fas fa-gift mr-2"></i>专属权益</h4>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-gray-400 text-sm mb-2">升级红利 (¥)</label>
+              <input type="number" name="upgrade_bonus" min="0" step="0.01" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary" placeholder="0">
+            </div>
+            <div>
+              <label class="block text-gray-400 text-sm mb-2">每日签到红利 (¥)</label>
+              <input type="number" name="daily_bonus" min="0" step="0.01" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary" placeholder="0">
+            </div>
+            <div>
+              <label class="block text-gray-400 text-sm mb-2">返水比例 (%)</label>
+              <input type="number" name="rebate_rate" min="0" max="100" step="0.01" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary" placeholder="0">
+            </div>
+            <div>
+              <label class="block text-gray-400 text-sm mb-2">单次提款限额 (¥)</label>
+              <input type="number" name="withdraw_limit" min="0" step="0.01" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary" placeholder="留空表示无限制">
+            </div>
+          </div>
+        </div>
+        
+        <!-- 其他设置 -->
+        <div>
+          <h4 class="font-semibold text-lg mb-4 text-purple-400"><i class="fas fa-cog mr-2"></i>其他设置</h4>
+          <div class="space-y-3">
+            <div class="flex items-center">
+              <input type="checkbox" name="is_active" checked class="w-4 h-4 text-primary bg-gray-700 border-gray-600 rounded focus:ring-primary">
+              <label class="ml-2 text-gray-300">启用该VIP等级</label>
+            </div>
+            <div>
+              <label class="block text-gray-400 text-sm mb-2">备注说明</label>
+              <textarea name="description" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-primary" placeholder="VIP等级的详细描述..."></textarea>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 提交按钮 -->
+        <div class="flex gap-3 pt-4 border-t border-gray-700">
+          <button type="submit" class="flex-1 bg-primary hover:bg-blue-700 px-6 py-3 rounded-lg font-medium transition-all">
+            <i class="fas fa-save mr-2"></i>保存VIP等级
+          </button>
+          <button type="button" onclick="closeVipLevelModal()" class="flex-1 bg-gray-600 hover:bg-gray-700 px-6 py-3 rounded-lg font-medium transition-all">
+            <i class="fas fa-times mr-2"></i>取消
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // 绑定表单提交事件
+  document.getElementById('vip-level-form').onsubmit = async (e) => {
+    e.preventDefault();
+    await submitVipLevel();
+  };
+}
+
+// 关闭VIP等级弹窗
+function closeVipLevelModal() {
+  const modal = document.getElementById('vip-level-modal');
+  if (modal) modal.remove();
+}
+
+// 提交VIP等级
+async function submitVipLevel(levelId = null) {
+  const form = document.getElementById('vip-level-form');
+  const formData = new FormData(form);
+  
+  const data = {
+    level: parseInt(formData.get('level')),
+    level_name: formData.get('level_name'),
+    min_deposit: parseFloat(formData.get('min_deposit')) || 0,
+    min_bet: parseFloat(formData.get('min_bet')) || 0,
+    upgrade_bonus: parseFloat(formData.get('upgrade_bonus')) || 0,
+    daily_bonus: parseFloat(formData.get('daily_bonus')) || 0,
+    rebate_rate: parseFloat(formData.get('rebate_rate')) / 100 || 0,
+    withdraw_limit: parseFloat(formData.get('withdraw_limit')) || null,
+    is_active: formData.get('is_active') === 'on' ? 1 : 0,
+    description: formData.get('description') || ''
+  };
+  
+  try {
+    const url = levelId ? `/api/vip-levels/${levelId}` : '/api/vip-levels';
+    const method = levelId ? 'PUT' : 'POST';
+    
+    const result = await api(url, { method, body: JSON.stringify(data) });
+    
+    if (result.success) {
+      showToast(levelId ? 'VIP等级更新成功' : 'VIP等级创建成功', 'success');
+      closeVipLevelModal();
+      loadVipLevels();
+    } else {
+      showToast(result.error || '操作失败', 'error');
+    }
+  } catch (error) {
+    console.error('Submit VIP level error:', error);
+    showToast('操作失败: ' + error.message, 'error');
+  }
+}
+
+// 编辑VIP等级
+async function editVipLevel(levelId) {
+  try {
+    const result = await api(`/api/vip-levels/${levelId}`);
+    if (!result.success) {
+      showToast('加载VIP等级信息失败', 'error');
+      return;
+    }
+    
+    const level = result.data;
+    
+    // 创建编辑弹窗（复用新增弹窗的HTML）
+    showAddVipLevelModal();
+    
+    // 修改标题
+    document.querySelector('#vip-level-modal h3').innerHTML = '<i class="fas fa-crown mr-2"></i>编辑VIP等级';
+    
+    // 填充表单数据
+    const form = document.getElementById('vip-level-form');
+    form.querySelector('[name="level"]').value = level.level;
+    form.querySelector('[name="level_name"]').value = level.level_name;
+    form.querySelector('[name="min_deposit"]').value = level.min_deposit || 0;
+    form.querySelector('[name="min_bet"]').value = level.min_bet || 0;
+    form.querySelector('[name="upgrade_bonus"]').value = level.upgrade_bonus || 0;
+    form.querySelector('[name="daily_bonus"]').value = level.daily_bonus || 0;
+    form.querySelector('[name="rebate_rate"]').value = (level.rebate_rate * 100) || 0;
+    form.querySelector('[name="withdraw_limit"]').value = level.withdraw_limit || '';
+    form.querySelector('[name="is_active"]').checked = level.is_active;
+    form.querySelector('[name="description"]').value = level.description || '';
+    
+    // 修改提交事件
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      await submitVipLevel(levelId);
+    };
+    
+  } catch (error) {
+    console.error('Edit VIP level error:', error);
+    showToast('加载失败: ' + error.message, 'error');
+  }
+}
+
+// 切换VIP等级状态
+async function toggleVipLevel(levelId, currentStatus) {
+  const action = currentStatus ? '禁用' : '启用';
+  if (!confirm(`确定要${action}该VIP等级吗？`)) return;
+  
+  try {
+    const result = await api(`/api/vip-levels/${levelId}/toggle`, { method: 'PUT' });
+    if (result.success) {
+      showToast(`${action}成功`, 'success');
+      loadVipLevels();
+    } else {
+      showToast(result.error || `${action}失败`, 'error');
+    }
+  } catch (error) {
+    console.error('Toggle VIP level error:', error);
+    showToast(`${action}失败: ` + error.message, 'error');
+  }
+}
+
+// 删除VIP等级
+async function deleteVipLevel(levelId, levelName) {
+  if (!confirm(`确定要删除VIP等级「${levelName}」吗？\n\n删除后无法恢复，已使用该等级的玩家将不受影响。`)) return;
+  
+  try {
+    const result = await api(`/api/vip-levels/${levelId}`, { method: 'DELETE' });
+    if (result.success) {
+      showToast('删除成功', 'success');
+      loadVipLevels();
+    } else {
+      showToast(result.error || '删除失败', 'error');
+    }
+  } catch (error) {
+    console.error('Delete VIP level error:', error);
+    showToast('删除失败: ' + error.message, 'error');
+  }
 }
