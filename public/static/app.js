@@ -8092,35 +8092,31 @@ async function renderReports(container) {
             <tr class="bg-gray-700 text-gray-300">
               <th class="text-center p-3 font-medium w-16">序号</th>
               <th class="text-right p-3 font-medium">投注金额</th>
-              <th class="text-right p-3 font-medium">会员输赢</th>
               <th class="text-right p-3 font-medium">有效投注</th>
+              <th class="text-right p-3 font-medium">会员输赢</th>
               <th class="text-right p-3 font-medium border-l border-gray-600">洗码率</th>
               <th class="text-right p-3 font-medium">洗码费</th>
               <th class="text-right p-3 font-medium border-l border-gray-600">占成比</th>
               <th class="text-right p-3 font-medium">占成收</th>
-              <th class="text-right p-3 font-medium border-l border-gray-600">上级交收</th>
+              <th class="text-right p-3 font-medium border-l border-gray-600">红利派发</th>
               <th class="text-right p-3 font-medium">实际盈亏</th>
-              <th class="text-right p-3 font-medium border-l border-gray-600">结算:下级</th>
-              <th class="text-right p-3 font-medium">本身盈利</th>
             </tr>
           </thead>
           <tbody id="settle-tbody" class="divide-y divide-gray-700">
-            <tr><td colspan="12" class="p-8 text-center text-gray-500">暂无数据</td></tr>
+            <tr><td colspan="10" class="p-8 text-center text-gray-500">暂无数据</td></tr>
           </tbody>
           <tfoot class="bg-gray-700 font-semibold border-t-2 border-gray-500">
             <tr id="settle-footer">
               <td class="p-3 text-center">合计</td>
               <td class="p-3 text-right text-yellow-400" id="settle-total-bet">-</td>
-              <td class="p-3 text-right" id="settle-total-win">-</td>
               <td class="p-3 text-right" id="settle-total-valid">-</td>
+              <td class="p-3 text-right" id="settle-total-win">-</td>
               <td class="p-3 text-right border-l border-gray-600">-</td>
               <td class="p-3 text-right" id="settle-total-commission">-</td>
               <td class="p-3 text-right border-l border-gray-600">-</td>
               <td class="p-3 text-right" id="settle-total-share">-</td>
-              <td class="p-3 text-right border-l border-gray-600" id="settle-total-upper">-</td>
-              <td class="p-3 text-right" id="settle-total-profit">-</td>
-              <td class="p-3 text-right border-l border-gray-600" id="settle-total-lower">-</td>
-              <td class="p-3 text-right text-green-400" id="settle-total-self">-</td>
+              <td class="p-3 text-right border-l border-gray-600" id="settle-total-bonus">-</td>
+              <td class="p-3 text-right text-green-400" id="settle-total-profit">-</td>
             </tr>
           </tfoot>
         </table>
