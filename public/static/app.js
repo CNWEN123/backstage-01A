@@ -6415,16 +6415,79 @@ async function renderReports(container) {
 
     <!-- 5. 游戏报表（原游戏营收报表） -->
     <div id="report-game-report" class="hidden bg-gray-800 rounded-xl overflow-hidden">
-      <div class="p-4 border-b border-gray-700 flex flex-wrap gap-4 items-end">
-        <div>
-          <label class="text-gray-400 text-xs block mb-1">开始日期</label>
-          <input type="date" id="game-start" value="${dayjs().subtract(30, 'day').format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+      <!-- 查询栏 -->
+      <div class="bg-gradient-to-r from-gray-750 to-gray-800 px-4 py-4 border-b border-gray-700">
+        <div class="flex flex-wrap gap-3 items-end">
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">开始日期</label>
+            <input type="date" id="game-start" value="${dayjs().subtract(30, 'day').format('YYYY-MM-DD')}" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
+          </div>
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">结束日期</label>
+            <input type="date" id="game-end" value="${dayjs().format('YYYY-MM-DD')}" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
+          </div>
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">游戏类型</label>
+            <select id="game-type-filter" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
+              <option value="">全部游戏</option>
+              <option value="baccarat">百家乐</option>
+              <option value="roulette">轮盘</option>
+              <option value="dragon_tiger">龙虎</option>
+              <option value="dice">骰宝</option>
+              <option value="blackjack">二十一点</option>
+            </select>
+          </div>
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">最小营收</label>
+            <input type="number" id="game-min-revenue" placeholder="0" min="0" step="10000" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
+          </div>
+          <div class="flex-1 min-w-[120px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">排序方式</label>
+            <select id="game-sort" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
+              <option value="revenue_desc">营收↓</option>
+              <option value="revenue_asc">营收↑</option>
+              <option value="bet_desc">投注额↓</option>
+              <option value="bet_asc">投注额↑</option>
+              <option value="players_desc">玩家数↓</option>
+              <option value="players_asc">玩家数↑</option>
+            </select>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="loadGameRevenue()" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 px-5 py-2 rounded-lg text-sm font-medium shadow-lg shadow-red-900/30 transition-all">
+              <i class="fas fa-search mr-1.5"></i>查询
+            </button>
+            <button onclick="exportGameReport()" class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 px-5 py-2 rounded-lg text-sm font-medium shadow-lg shadow-green-900/30 transition-all">
+              <i class="fas fa-download mr-1.5"></i>导出
+            </button>
+            <button onclick="resetGameFilters()" class="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 px-5 py-2 rounded-lg text-sm font-medium shadow-lg transition-all">
+              <i class="fas fa-redo mr-1.5"></i>重置
+            </button>
+          </div>
         </div>
-        <div>
-          <label class="text-gray-400 text-xs block mb-1">结束日期</label>
-          <input type="date" id="game-end" value="${dayjs().format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+      </div>
+      
+      <!-- 统计卡片 -->
+      <div id="game-summary" class="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 border-b border-gray-700 bg-gray-750">
+        <div class="text-center">
+          <p class="text-gray-400 text-xs">游戏种类</p>
+          <p class="text-lg font-bold text-primary" id="game-total-types">-</p>
         </div>
-        <button onclick="loadGameRevenue()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded text-sm"><i class="fas fa-search mr-2"></i>查询</button>
+        <div class="text-center">
+          <p class="text-gray-400 text-xs">总注单数</p>
+          <p class="text-lg font-bold text-blue-400" id="game-total-bets">-</p>
+        </div>
+        <div class="text-center">
+          <p class="text-gray-400 text-xs">总投注额</p>
+          <p class="text-lg font-bold text-cyan-400" id="game-total-amount">-</p>
+        </div>
+        <div class="text-center">
+          <p class="text-gray-400 text-xs">总派彩</p>
+          <p class="text-lg font-bold text-purple-400" id="game-total-payout">-</p>
+        </div>
+        <div class="text-center">
+          <p class="text-gray-400 text-xs">总营收</p>
+          <p class="text-lg font-bold" id="game-total-revenue">-</p>
+        </div>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full data-table">
@@ -6977,85 +7040,117 @@ async function renderReports(container) {
     
     <!-- 2. 结算报表 -->
     <div id="report-settle" class="hidden bg-gray-800 rounded-xl overflow-hidden">
-      <!-- 第一行：快捷日期 + 日期范围 -->
-      <div class="p-4 border-b border-gray-700">
-        <div class="flex flex-wrap gap-4 items-end justify-between">
-          <div class="flex flex-wrap gap-4 items-end">
-            <div>
-              <label class="text-gray-400 text-xs block mb-1">营收报表</label>
-              <div class="flex gap-1">
-                <button onclick="setSettleDateRange('today')" class="px-3 py-1.5 bg-gray-600 hover:bg-primary rounded text-sm transition">今日</button>
-                <button onclick="setSettleDateRange('yesterday')" class="px-3 py-1.5 bg-gray-600 hover:bg-primary rounded text-sm transition">昨日</button>
-                <button onclick="setSettleDateRange('week')" class="px-3 py-1.5 bg-gray-600 hover:bg-primary rounded text-sm transition">本周</button>
-                <button onclick="setSettleDateRange('month')" class="px-3 py-1.5 bg-gray-600 hover:bg-primary rounded text-sm transition">本月</button>
-                <button onclick="setSettleDateRange('lastmonth')" class="px-3 py-1.5 bg-gray-600 hover:bg-primary rounded text-sm transition">上月</button>
-              </div>
+      <!-- 查询栏 -->
+      <div class="bg-gradient-to-r from-gray-750 to-gray-800 px-4 py-4 border-b border-gray-700">
+        <div class="flex flex-wrap gap-3 items-end">
+          <!-- 快捷日期 -->
+          <div class="flex-1 min-w-[200px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">快捷日期</label>
+            <div class="flex gap-1 flex-wrap">
+              <button onclick="setSettleDateRange('today')" class="px-3 py-1.5 bg-gray-600 hover:bg-primary rounded text-xs transition-all shadow-sm">今日</button>
+              <button onclick="setSettleDateRange('yesterday')" class="px-3 py-1.5 bg-gray-600 hover:bg-primary rounded text-xs transition-all shadow-sm">昨日</button>
+              <button onclick="setSettleDateRange('week')" class="px-3 py-1.5 bg-gray-600 hover:bg-primary rounded text-xs transition-all shadow-sm">本周</button>
+              <button onclick="setSettleDateRange('month')" class="px-3 py-1.5 bg-gray-600 hover:bg-primary rounded text-xs transition-all shadow-sm">本月</button>
+              <button onclick="setSettleDateRange('lastmonth')" class="px-3 py-1.5 bg-gray-600 hover:bg-primary rounded text-xs transition-all shadow-sm">上月</button>
             </div>
-            <div>
-              <label class="text-gray-400 text-xs block mb-1">日期范围</label>
-              <div class="flex items-center space-x-2">
-                <input type="datetime-local" id="settle-start-date" value="${dayjs().startOf('month').format('YYYY-MM-DDTHH:mm')}" class="bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-sm w-44">
-                <span class="text-gray-500">-</span>
-                <input type="datetime-local" id="settle-end-date" value="${dayjs().format('YYYY-MM-DDTHH:mm')}" class="bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-sm w-44">
-              </div>
-            </div>
+          </div>
+          
+          <!-- 日期范围 -->
+          <div class="flex-1 min-w-[180px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">开始时间</label>
+            <input type="datetime-local" id="settle-start-date" value="${dayjs().startOf('month').format('YYYY-MM-DDTHH:mm')}" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
+          </div>
+          
+          <div class="flex-1 min-w-[180px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">结束时间</label>
+            <input type="datetime-local" id="settle-end-date" value="${dayjs().format('YYYY-MM-DDTHH:mm')}" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
+          </div>
+          
+          <!-- 游戏类型 -->
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">游戏类型</label>
+            <select id="settle-game-type" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
+              <option value="">全部游戏</option>
+              <option value="live_video">真人视讯</option>
+              <option value="baccarat">百家乐</option>
+              <option value="roulette">轮盘</option>
+              <option value="dragon_tiger">龙虎</option>
+              <option value="dice">骰宝</option>
+              <option value="blackjack">二十一点</option>
+            </select>
+          </div>
+          
+          <!-- 业务模式 -->
+          <div class="flex-1 min-w-[120px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">业务模式</label>
+            <select id="settle-business-mode" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
+              <option value="">全部</option>
+              <option value="transfer">转账模式</option>
+              <option value="single">单一钱包</option>
+            </select>
+          </div>
+          
+          <!-- 交易货币 -->
+          <div class="flex-1 min-w-[120px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">货币类型</label>
+            <select id="settle-currency" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
+              <option value="">全部货币</option>
+              <option value="CNY" selected>人民币 CNY</option>
+              <option value="USD">美元 USD</option>
+              <option value="HKD">港币 HKD</option>
+            </select>
+          </div>
+          
+          <!-- 用户类型 -->
+          <div class="flex-1 min-w-[120px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">用户类型</label>
+            <select id="settle-user-type" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
+              <option value="real" selected>正式用户</option>
+              <option value="test">测试用户</option>
+              <option value="all">全部用户</option>
+            </select>
+          </div>
+          
+          <!-- 操作按钮 -->
+          <div class="flex gap-2">
+            <button onclick="loadSettleReport()" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 px-5 py-2 rounded-lg text-sm font-medium shadow-lg shadow-red-900/30 transition-all">
+              <i class="fas fa-search mr-1.5"></i>查询
+            </button>
+            <button onclick="exportReport('settle')" class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 px-5 py-2 rounded-lg text-sm font-medium shadow-lg shadow-green-900/30 transition-all">
+              <i class="fas fa-file-excel mr-1.5"></i>导出
+            </button>
+            <button onclick="resetSettleFilters()" class="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 px-5 py-2 rounded-lg text-sm font-medium shadow-lg transition-all">
+              <i class="fas fa-redo mr-1.5"></i>重置
+            </button>
           </div>
         </div>
       </div>
       
-      <!-- 第二行：筛选条件 + 操作按钮 -->
-      <div class="px-4 py-3 border-b border-gray-700 bg-gray-750">
-        <div class="flex flex-wrap gap-3 items-end justify-between">
-          <div class="flex flex-wrap gap-3 items-end">
-            <div>
-              <label class="text-gray-400 text-xs block mb-1">请选择游戏</label>
-              <select id="settle-game-type" class="bg-gray-700 border border-gray-600 rounded px-3 py-1.5 text-sm min-w-32">
-                <option value="">请选择游戏类型</option>
-                <option value="live_video">真人视讯</option>
-                <option value="baccarat">百家乐</option>
-                <option value="roulette">轮盘</option>
-                <option value="dragon_tiger">龙虎</option>
-                <option value="dice">骰宝</option>
-                <option value="blackjack">二十一点</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-gray-400 text-xs block mb-1">业务模式</label>
-              <select id="settle-business-mode" class="bg-gray-700 border border-gray-600 rounded px-3 py-1.5 text-sm">
-                <option value="">业务模式</option>
-                <option value="transfer">转账模式</option>
-                <option value="single">单一钱包</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-gray-400 text-xs block mb-1">交易货币</label>
-              <select id="settle-currency" class="bg-gray-700 border border-gray-600 rounded px-3 py-1.5 text-sm">
-                <option value="">交易货币</option>
-                <option value="CNY" selected>人民币 (CNY)</option>
-                <option value="USD">美元 (USD)</option>
-                <option value="HKD">港币 (HKD)</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-gray-400 text-xs block mb-1">用户类型</label>
-              <select id="settle-user-type" class="bg-gray-700 border border-gray-600 rounded px-3 py-1.5 text-sm">
-                <option value="real" selected>正式用户</option>
-                <option value="test">测试用户</option>
-                <option value="all">全部</option>
-              </select>
-            </div>
-          </div>
-          <div class="flex gap-2">
-            <button onclick="loadSettleReport()" class="bg-primary hover:bg-blue-700 px-5 py-1.5 rounded text-sm font-medium">
-              <i class="fas fa-search mr-1"></i>查询
-            </button>
-            <button onclick="exportReport('settle')" class="bg-green-600 hover:bg-green-700 px-4 py-1.5 rounded text-sm">
-              <i class="fas fa-file-excel mr-1"></i>EXCEL
-            </button>
-            <button onclick="copySettleData()" class="bg-cyan-600 hover:bg-cyan-700 px-4 py-1.5 rounded text-sm">
-              <i class="fas fa-copy mr-1"></i>复制数据
-            </button>
-          </div>
+      <!-- 统计卡片 -->
+      <div id="settle-summary" class="grid grid-cols-2 md:grid-cols-6 gap-4 p-4 border-b border-gray-700 bg-gray-750">
+        <div class="text-center">
+          <p class="text-gray-400 text-xs">总投注</p>
+          <p class="text-lg font-bold text-cyan-400" id="settle-stat-total-bet">-</p>
+        </div>
+        <div class="text-center">
+          <p class="text-gray-400 text-xs">总派彩</p>
+          <p class="text-lg font-bold text-purple-400" id="settle-stat-total-payout">-</p>
+        </div>
+        <div class="text-center">
+          <p class="text-gray-400 text-xs">公司盈亏</p>
+          <p class="text-lg font-bold" id="settle-stat-company-profit">-</p>
+        </div>
+        <div class="text-center">
+          <p class="text-gray-400 text-xs">有效投注</p>
+          <p class="text-lg font-bold text-yellow-400" id="settle-stat-valid-bet">-</p>
+        </div>
+        <div class="text-center">
+          <p class="text-gray-400 text-xs">总佣金</p>
+          <p class="text-lg font-bold text-orange-400" id="settle-stat-commission">-</p>
+        </div>
+        <div class="text-center">
+          <p class="text-gray-400 text-xs">结算记录</p>
+          <p class="text-lg font-bold text-white" id="settle-stat-record-count">-</p>
         </div>
       </div>
       
@@ -7472,27 +7567,124 @@ async function loadDailySummary() {
 async function loadGameRevenue() {
   const startDate = document.getElementById('game-start')?.value;
   const endDate = document.getElementById('game-end')?.value;
+  const gameTypeFilter = document.getElementById('game-type-filter')?.value || '';
+  const minRevenue = parseFloat(document.getElementById('game-min-revenue')?.value) || 0;
+  const sortBy = document.getElementById('game-sort')?.value || 'revenue_desc';
   const tbody = document.getElementById('game-tbody');
   
   tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>加载中...</td></tr>';
   
-  const result = await api(`/api/reports/game-revenue?start_date=${startDate}&end_date=${endDate}`);
-  
-  if (result.success && result.data.length > 0) {
-    tbody.innerHTML = result.data.map(g => `
-      <tr class="border-t border-gray-700 hover:bg-gray-750">
-        <td class="p-3 font-medium">${escapeHtml(g.game_name)}</td>
-        <td class="p-3 text-right">${g.bet_count || 0}</td>
-        <td class="p-3 text-right">${g.player_count || 0}</td>
-        <td class="p-3 text-right">${formatCurrency(g.total_bet)}</td>
-        <td class="p-3 text-right">${formatCurrency(g.total_payout)}</td>
-        <td class="p-3 text-right font-bold ${g.game_revenue >= 0 ? 'text-green-400' : 'text-red-400'}">${formatCurrency(g.game_revenue)}</td>
-        <td class="p-3 text-right ${g.win_rate >= 0 ? 'text-green-400' : 'text-red-400'}">${g.win_rate}%</td>
-      </tr>
-    `).join('');
-  } else {
-    tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-400">暂无数据</td></tr>';
+  try {
+    const result = await api(`/api/reports/game-revenue?start_date=${startDate}&end_date=${endDate}`);
+    
+    if (result.success && result.data && result.data.length > 0) {
+      let data = result.data;
+      
+      // 前端筛选：游戏类型
+      if (gameTypeFilter) {
+        data = data.filter(g => g.game_type === gameTypeFilter);
+      }
+      
+      // 前端筛选：最小营收
+      if (minRevenue > 0) {
+        data = data.filter(g => (g.game_revenue || 0) >= minRevenue);
+      }
+      
+      // 前端排序
+      switch(sortBy) {
+        case 'revenue_desc':
+          data.sort((a, b) => (b.game_revenue || 0) - (a.game_revenue || 0));
+          break;
+        case 'revenue_asc':
+          data.sort((a, b) => (a.game_revenue || 0) - (b.game_revenue || 0));
+          break;
+        case 'bet_desc':
+          data.sort((a, b) => (b.total_bet || 0) - (a.total_bet || 0));
+          break;
+        case 'bet_asc':
+          data.sort((a, b) => (a.total_bet || 0) - (b.total_bet || 0));
+          break;
+        case 'players_desc':
+          data.sort((a, b) => (b.player_count || 0) - (a.player_count || 0));
+          break;
+        case 'players_asc':
+          data.sort((a, b) => (a.player_count || 0) - (b.player_count || 0));
+          break;
+      }
+      
+      // 计算统计数据
+      const stats = data.reduce((acc, g) => {
+        acc.totalBets += g.bet_count || 0;
+        acc.totalAmount += g.total_bet || 0;
+        acc.totalPayout += g.total_payout || 0;
+        acc.totalRevenue += g.game_revenue || 0;
+        return acc;
+      }, { totalBets: 0, totalAmount: 0, totalPayout: 0, totalRevenue: 0 });
+      
+      // 更新统计卡片
+      document.getElementById('game-total-types').textContent = data.length;
+      document.getElementById('game-total-bets').textContent = formatNumber(stats.totalBets);
+      document.getElementById('game-total-amount').textContent = formatCurrency(stats.totalAmount);
+      document.getElementById('game-total-payout').textContent = formatCurrency(stats.totalPayout);
+      const revenueEl = document.getElementById('game-total-revenue');
+      revenueEl.textContent = formatCurrency(stats.totalRevenue);
+      revenueEl.className = stats.totalRevenue >= 0 ? 'text-lg font-bold text-green-400' : 'text-lg font-bold text-red-400';
+      
+      // 渲染表格
+      if (data.length > 0) {
+        tbody.innerHTML = data.map(g => `
+          <tr class="border-t border-gray-700 hover:bg-gray-750">
+            <td class="p-3 font-medium">${escapeHtml(g.game_name)}</td>
+            <td class="p-3 text-right">${g.bet_count || 0}</td>
+            <td class="p-3 text-right">${g.player_count || 0}</td>
+            <td class="p-3 text-right">${formatCurrency(g.total_bet)}</td>
+            <td class="p-3 text-right">${formatCurrency(g.total_payout)}</td>
+            <td class="p-3 text-right font-bold ${g.game_revenue >= 0 ? 'text-green-400' : 'text-red-400'}">${formatCurrency(g.game_revenue)}</td>
+            <td class="p-3 text-right ${g.win_rate >= 0 ? 'text-green-400' : 'text-red-400'}">${g.win_rate}%</td>
+          </tr>
+        `).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-400">暂无符合条件的数据</td></tr>';
+      }
+    } else {
+      tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-400">暂无数据</td></tr>';
+      // 清空统计卡片
+      document.getElementById('game-total-types').textContent = '0';
+      document.getElementById('game-total-bets').textContent = '0';
+      document.getElementById('game-total-amount').textContent = '¥ 0.00';
+      document.getElementById('game-total-payout').textContent = '¥ 0.00';
+      document.getElementById('game-total-revenue').textContent = '¥ 0.00';
+    }
+  } catch (error) {
+    tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-red-400">加载失败，请稍后重试</td></tr>';
+    console.error('加载游戏报表失败:', error);
   }
+}
+
+// 重置游戏报表查询条件
+function resetGameFilters() {
+  document.getElementById('game-start').value = dayjs().subtract(30, 'day').format('YYYY-MM-DD');
+  document.getElementById('game-end').value = dayjs().format('YYYY-MM-DD');
+  document.getElementById('game-type-filter').value = '';
+  document.getElementById('game-min-revenue').value = '';
+  document.getElementById('game-sort').value = 'revenue_desc';
+  loadGameRevenue();
+}
+
+// 导出游戏报表
+function exportGameReport() {
+  const startDate = document.getElementById('game-start')?.value;
+  const endDate = document.getElementById('game-end')?.value;
+  const gameType = document.getElementById('game-type-filter')?.value || '';
+  const minRevenue = document.getElementById('game-min-revenue')?.value || '';
+  const sortBy = document.getElementById('game-sort')?.value || 'revenue_desc';
+  
+  let url = `/api/reports/game-revenue/export?start_date=${startDate}&end_date=${endDate}`;
+  if (gameType) url += `&game_type=${gameType}`;
+  if (minRevenue) url += `&min_revenue=${minRevenue}`;
+  url += `&sort=${sortBy}`;
+  
+  window.open(url, '_blank');
 }
 
 // 加载注单明细
@@ -8823,7 +9015,18 @@ async function loadSettleReport() {
       
       document.getElementById('settle-total-records').textContent = total;
       
-      // 更新汇总
+      // 更新统计卡片
+      document.getElementById('settle-stat-total-bet').textContent = formatCurrency(summary.total_bet || 0);
+      document.getElementById('settle-stat-total-payout').textContent = formatCurrency(summary.total_win || 0);
+      const companyProfit = (summary.total_bet || 0) - (summary.total_win || 0);
+      const profitEl = document.getElementById('settle-stat-company-profit');
+      profitEl.textContent = formatCurrency(companyProfit);
+      profitEl.className = companyProfit >= 0 ? 'text-lg font-bold text-green-400' : 'text-lg font-bold text-red-400';
+      document.getElementById('settle-stat-valid-bet').textContent = formatCurrency(summary.total_valid_bet || 0);
+      document.getElementById('settle-stat-commission').textContent = formatCurrency(summary.total_commission || 0);
+      document.getElementById('settle-stat-record-count').textContent = total;
+      
+      // 更新表格底部汇总
       document.getElementById('settle-total-bet').textContent = formatNumber(summary.total_bet || 0);
       document.getElementById('settle-total-win').textContent = formatNumber(summary.total_win || 0);
       document.getElementById('settle-total-valid').textContent = formatNumber(summary.total_valid_bet || 0);
@@ -8878,6 +9081,47 @@ function copySettleData() {
     window.getSelection().removeAllRanges();
     alert('数据已复制到剪贴板');
   }
+}
+
+// 设置结算报表日期范围
+function setSettleDateRange(range) {
+  const startInput = document.getElementById('settle-start-date');
+  const endInput = document.getElementById('settle-end-date');
+  const now = dayjs();
+  
+  switch(range) {
+    case 'today':
+      startInput.value = now.startOf('day').format('YYYY-MM-DDTHH:mm');
+      endInput.value = now.format('YYYY-MM-DDTHH:mm');
+      break;
+    case 'yesterday':
+      startInput.value = now.subtract(1, 'day').startOf('day').format('YYYY-MM-DDTHH:mm');
+      endInput.value = now.subtract(1, 'day').endOf('day').format('YYYY-MM-DDTHH:mm');
+      break;
+    case 'week':
+      startInput.value = now.startOf('week').format('YYYY-MM-DDTHH:mm');
+      endInput.value = now.format('YYYY-MM-DDTHH:mm');
+      break;
+    case 'month':
+      startInput.value = now.startOf('month').format('YYYY-MM-DDTHH:mm');
+      endInput.value = now.format('YYYY-MM-DDTHH:mm');
+      break;
+    case 'lastmonth':
+      startInput.value = now.subtract(1, 'month').startOf('month').format('YYYY-MM-DDTHH:mm');
+      endInput.value = now.subtract(1, 'month').endOf('month').format('YYYY-MM-DDTHH:mm');
+      break;
+  }
+}
+
+// 重置结算报表查询条件
+function resetSettleFilters() {
+  document.getElementById('settle-start-date').value = dayjs().startOf('month').format('YYYY-MM-DDTHH:mm');
+  document.getElementById('settle-end-date').value = dayjs().format('YYYY-MM-DDTHH:mm');
+  document.getElementById('settle-game-type').value = '';
+  document.getElementById('settle-business-mode').value = '';
+  document.getElementById('settle-currency').value = 'CNY';
+  document.getElementById('settle-user-type').value = 'real';
+  loadSettleReport();
 }
 
 // 加载转账记录
