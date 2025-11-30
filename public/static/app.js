@@ -840,17 +840,23 @@ async function renderAgents(container) {
   };
   
   container.innerHTML = `
-    <div class="flex gap-6 h-[calc(100vh-12rem)]">
-      <!-- 左侧：代理层级树 -->
-      <div class="w-1/3 bg-gray-800 rounded-xl p-5 flex flex-col">
-        <h3 class="text-lg font-semibold mb-4"><i class="fas fa-sitemap text-primary mr-2"></i>代理层级结构</h3>
-        <div class="flex-1 space-y-2 overflow-y-auto pr-2">
+    <div class="space-y-4">
+      <!-- 代理层级树（可折叠） -->
+      <div class="bg-gray-800 rounded-xl overflow-hidden">
+        <div class="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-750 transition-colors" onclick="toggleAgentTree()">
+          <h3 class="text-lg font-semibold">
+            <i class="fas fa-sitemap text-primary mr-2"></i>代理层级结构
+            <span class="text-sm text-gray-400 ml-2">(点击展开/收起)</span>
+          </h3>
+          <i id="tree-toggle-icon" class="fas fa-chevron-down text-gray-400 transition-transform"></i>
+        </div>
+        <div id="agent-tree-content" class="border-t border-gray-700 p-4 max-h-96 overflow-y-auto">
           ${renderTree(tree)}
         </div>
       </div>
       
-      <!-- 右侧：代理列表 -->
-      <div class="flex-1 bg-gray-800 rounded-xl p-5 flex flex-col">
+      <!-- 代理列表 -->
+      <div class="bg-gray-800 rounded-xl p-5">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-lg font-semibold"><i class="fas fa-users text-primary mr-2"></i>代理列表</h3>
           <button onclick="showAddAgentModal()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded-lg text-sm">
@@ -950,7 +956,7 @@ async function renderAgents(container) {
         </div>
         
         <!-- 数据表格 -->
-        <div class="flex-1 overflow-auto">
+        <div class="overflow-x-auto">
           <table id="agents-table" class="w-full data-table">
             <thead class="bg-gray-700">
               <tr>
@@ -985,6 +991,27 @@ async function renderAgents(container) {
   
   // 存储原始数据供搜索使用
   window.allAgents = agents;
+  
+  // 默认收起层级树
+  const treeContent = document.getElementById('agent-tree-content');
+  if (treeContent) {
+    treeContent.style.display = 'none';
+    document.getElementById('tree-toggle-icon').style.transform = 'rotate(-90deg)';
+  }
+}
+
+// 切换代理层级树显示
+function toggleAgentTree() {
+  const content = document.getElementById('agent-tree-content');
+  const icon = document.getElementById('tree-toggle-icon');
+  
+  if (content.style.display === 'none') {
+    content.style.display = 'block';
+    icon.style.transform = 'rotate(0deg)';
+  } else {
+    content.style.display = 'none';
+    icon.style.transform = 'rotate(-90deg)';
+  }
 }
 
 // 渲染代理表格
