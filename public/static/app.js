@@ -5630,30 +5630,47 @@ async function renderReports(container) {
     
     <!-- 1. 全流水记录 -->
     <div id="report-transactions" class="bg-gray-800 rounded-xl overflow-hidden">
-      <div class="p-4 border-b border-gray-700 flex flex-wrap gap-4 items-end">
-        <div>
-          <label class="text-gray-400 text-xs block mb-1">开始日期</label>
-          <input type="date" id="trans-start" value="${dayjs().subtract(7, 'day').format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+      <div class="p-4 border-b border-gray-700">
+        <div class="flex flex-wrap gap-4 items-end mb-3">
+          <div>
+            <label class="text-gray-400 text-xs block mb-1">开始日期</label>
+            <input type="date" id="trans-start" value="${dayjs().subtract(7, 'day').format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="text-gray-400 text-xs block mb-1">结束日期</label>
+            <input type="date" id="trans-end" value="${dayjs().format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="text-gray-400 text-xs block mb-1">交易类型</label>
+            <select id="trans-type" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm w-36">
+              <option value="">全部类型</option>
+              <option value="1">存款</option>
+              <option value="2">取款</option>
+              <option value="3">投注扣款</option>
+              <option value="4">派彩增加</option>
+              <option value="5">红利赠送</option>
+              <option value="6">洗码返水</option>
+              <option value="7">人工增加</option>
+              <option value="8">人工扣除</option>
+              <option value="9">转账转出</option>
+              <option value="10">转账转入</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-gray-400 text-xs block mb-1">订单号</label>
+            <input type="text" id="trans-order" placeholder="输入订单号" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm w-40">
+          </div>
+          <div>
+            <label class="text-gray-400 text-xs block mb-1">玩家ID/用户名</label>
+            <input type="text" id="trans-player" placeholder="玩家ID或用户名" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm w-40">
+          </div>
+          <button onclick="loadTransactions()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded text-sm">
+            <i class="fas fa-search mr-2"></i>查询
+          </button>
+          <button onclick="exportTransactions()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-sm">
+            <i class="fas fa-download mr-2"></i>导出
+          </button>
         </div>
-        <div>
-          <label class="text-gray-400 text-xs block mb-1">结束日期</label>
-          <input type="date" id="trans-end" value="${dayjs().format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
-        </div>
-        <div>
-          <label class="text-gray-400 text-xs block mb-1">交易类型</label>
-          <select id="trans-type" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
-            <option value="">全部</option>
-            <option value="1">存款</option>
-            <option value="2">取款</option>
-            <option value="3">投注扣款</option>
-            <option value="4">派彩增加</option>
-            <option value="5">红利赠送</option>
-            <option value="6">洗码返水</option>
-            <option value="7">人工增加</option>
-            <option value="8">人工扣除</option>
-          </select>
-        </div>
-        <button onclick="loadTransactions()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded text-sm"><i class="fas fa-search mr-2"></i>查询</button>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full data-table">
@@ -5679,24 +5696,49 @@ async function renderReports(container) {
 
     <!-- 2. 综合报表 -->
     <div id="report-comprehensive" class="hidden bg-gray-800 rounded-xl overflow-hidden">
-      <div class="p-4 border-b border-gray-700 flex flex-wrap gap-4 items-end">
-        <div>
-          <label class="text-gray-400 text-xs block mb-1">开始日期</label>
-          <input type="date" id="comp-start" value="${dayjs().subtract(30, 'day').format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+      <div class="p-4 border-b border-gray-700">
+        <div class="flex flex-wrap gap-4 items-end mb-3">
+          <div>
+            <label class="text-gray-400 text-xs block mb-1">开始日期</label>
+            <input type="date" id="comp-start" value="${dayjs().subtract(30, 'day').format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="text-gray-400 text-xs block mb-1">结束日期</label>
+            <input type="date" id="comp-end" value="${dayjs().format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="text-gray-400 text-xs block mb-1">分组维度</label>
+            <select id="comp-group" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm w-32">
+              <option value="date">按日期</option>
+              <option value="agent">按代理</option>
+              <option value="game">按游戏</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-gray-400 text-xs block mb-1">代理筛选</label>
+            <select id="comp-agent" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm w-40">
+              <option value="">全部代理</option>
+              ${agents.map(a => \`<option value="\${a.id}">\${escapeHtml(a.agent_username)}</option>\`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="text-gray-400 text-xs block mb-1">游戏类型</label>
+            <select id="comp-game" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm w-32">
+              <option value="">全部游戏</option>
+              <option value="baccarat">百家乐</option>
+              <option value="roulette">轮盘</option>
+              <option value="dragon_tiger">龙虎</option>
+              <option value="sicbo">骰宝</option>
+              <option value="blackjack">21点</option>
+            </select>
+          </div>
+          <button onclick="loadComprehensive()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded text-sm">
+            <i class="fas fa-chart-bar mr-2"></i>生成报表
+          </button>
+          <button onclick="exportComprehensive()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-sm">
+            <i class="fas fa-download mr-2"></i>导出
+          </button>
         </div>
-        <div>
-          <label class="text-gray-400 text-xs block mb-1">结束日期</label>
-          <input type="date" id="comp-end" value="${dayjs().format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
-        </div>
-        <div>
-          <label class="text-gray-400 text-xs block mb-1">分组维度</label>
-          <select id="comp-group" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
-            <option value="date">按日期</option>
-            <option value="agent">按代理</option>
-            <option value="game">按游戏</option>
-          </select>
-        </div>
-        <button onclick="loadComprehensive()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded text-sm"><i class="fas fa-chart-bar mr-2"></i>生成报表</button>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full data-table">
@@ -5721,23 +5763,49 @@ async function renderReports(container) {
 
     <!-- 3. 玩家排名 -->
     <div id="report-ranking" class="hidden bg-gray-800 rounded-xl overflow-hidden">
-      <div class="p-4 border-b border-gray-700 flex flex-wrap gap-4 items-end">
-        <div>
-          <label class="text-gray-400 text-xs block mb-1">开始日期</label>
-          <input type="date" id="rank-start" value="${dayjs().subtract(7, 'day').format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+      <div class="p-4 border-b border-gray-700">
+        <div class="flex flex-wrap gap-4 items-end mb-3">
+          <div>
+            <label class="text-gray-400 text-xs block mb-1">开始日期</label>
+            <input type="date" id="rank-start" value="${dayjs().subtract(7, 'day').format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="text-gray-400 text-xs block mb-1">结束日期</label>
+            <input type="date" id="rank-end" value="${dayjs().format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="text-gray-400 text-xs block mb-1">代理筛选</label>
+            <select id="rank-agent" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm w-40">
+              <option value="">全部代理</option>
+              ${agents.map(a => \`<option value="\${a.id}">\${escapeHtml(a.agent_username)}</option>\`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="text-gray-400 text-xs block mb-1">VIP等级</label>
+            <select id="rank-vip" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm w-32">
+              <option value="">全部等级</option>
+              <option value="0">VIP0</option>
+              <option value="1">VIP1</option>
+              <option value="2">VIP2</option>
+              <option value="3">VIP3</option>
+              <option value="4">VIP4</option>
+              <option value="5">VIP5</option>
+              <option value="6">VIP6</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-gray-400 text-xs block mb-1">显示数量</label>
+            <select id="rank-limit" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm w-24">
+              <option value="10">TOP10</option>
+              <option value="20">TOP20</option>
+              <option value="50">TOP50</option>
+              <option value="100">TOP100</option>
+            </select>
+          </div>
+          <button onclick="loadRanking()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded text-sm">
+            <i class="fas fa-trophy mr-2"></i>查看排名
+          </button>
         </div>
-        <div>
-          <label class="text-gray-400 text-xs block mb-1">结束日期</label>
-          <input type="date" id="rank-end" value="${dayjs().format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
-        </div>
-        <div>
-          <label class="text-gray-400 text-xs block mb-1">排名类型</label>
-          <select id="rank-type" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
-            <option value="winner">赢得最多</option>
-            <option value="loser">输得最多</option>
-          </select>
-        </div>
-        <button onclick="loadRanking()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded text-sm"><i class="fas fa-trophy mr-2"></i>查看排名</button>
       </div>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4">
         <div>
@@ -6566,11 +6634,18 @@ async function loadTransactions(page = 1) {
   const startDate = document.getElementById('trans-start')?.value;
   const endDate = document.getElementById('trans-end')?.value;
   const type = document.getElementById('trans-type')?.value;
+  const orderNo = document.getElementById('trans-order')?.value?.trim();
+  const playerSearch = document.getElementById('trans-player')?.value?.trim();
   const tbody = document.getElementById('trans-tbody');
   
   tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>加载中...</td></tr>';
   
-  const result = await api(`/api/reports/all-transactions?start_date=${startDate}&end_date=${endDate}&type=${type}&page=${page}`);
+  let url = `/api/reports/all-transactions?start_date=${startDate}&end_date=${endDate}&page=${page}`;
+  if (type) url += `&type=${type}`;
+  if (orderNo) url += `&order_no=${encodeURIComponent(orderNo)}`;
+  if (playerSearch) url += `&player_search=${encodeURIComponent(playerSearch)}`;
+  
+  const result = await api(url);
   
   if (result.success && result.data.length > 0) {
     tbody.innerHTML = result.data.map(t => `
@@ -6582,9 +6657,11 @@ async function loadTransactions(page = 1) {
           t.transaction_type === 3 ? 'bg-orange-600' :
           t.transaction_type === 4 ? 'bg-blue-600' :
           t.transaction_type === 5 ? 'bg-purple-600' :
-          t.transaction_type === 6 ? 'bg-cyan-600' : 'bg-gray-600'
+          t.transaction_type === 6 ? 'bg-cyan-600' :
+          t.transaction_type === 9 ? 'bg-indigo-600' :
+          t.transaction_type === 10 ? 'bg-teal-600' : 'bg-gray-600'
         }">${escapeHtml(t.type_name)}</span></td>
-        <td class="p-3">${escapeHtml(t.player_name)}</td>
+        <td class="p-3">${escapeHtml(t.player_name)} <span class="text-xs text-gray-400">(ID:${t.player_id})</span></td>
         <td class="p-3 text-right font-mono">${formatCurrency(t.balance_before)}</td>
         <td class="p-3 text-right font-mono font-bold ${t.amount >= 0 ? 'text-green-400' : 'text-red-400'}">${t.amount >= 0 ? '+' : ''}${formatCurrency(t.amount)}</td>
         <td class="p-3 text-right font-mono">${formatCurrency(t.balance_after)}</td>
@@ -6592,8 +6669,24 @@ async function loadTransactions(page = 1) {
         <td class="p-3 text-sm text-gray-400">${formatDateTime(t.created_at)}</td>
       </tr>
     `).join('');
+    
+    // 显示分页信息
+    const pagination = document.getElementById('trans-pagination');
+    const total = result.total || 0;
+    const limit = result.limit || 50;
+    const totalPages = Math.ceil(total / limit);
+    pagination.innerHTML = `
+      <div class="text-sm text-gray-400">
+        共 <span class="text-white font-medium">${total}</span> 条记录，第 ${page}/${totalPages} 页
+      </div>
+      <div class="flex gap-2">
+        ${page > 1 ? `<button onclick="loadTransactions(${page - 1})" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">上一页</button>` : ''}
+        ${page < totalPages ? `<button onclick="loadTransactions(${page + 1})" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">下一页</button>` : ''}
+      </div>
+    `;
   } else {
     tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-gray-400">暂无数据</td></tr>';
+    document.getElementById('trans-pagination').innerHTML = '';
   }
 }
 
@@ -6602,11 +6695,17 @@ async function loadComprehensive() {
   const startDate = document.getElementById('comp-start')?.value;
   const endDate = document.getElementById('comp-end')?.value;
   const groupBy = document.getElementById('comp-group')?.value;
+  const agentId = document.getElementById('comp-agent')?.value;
+  const gameType = document.getElementById('comp-game')?.value;
   const tbody = document.getElementById('comp-tbody');
   
   tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>生成中...</td></tr>';
   
-  const result = await api(`/api/reports/comprehensive?start_date=${startDate}&end_date=${endDate}&group_by=${groupBy}`);
+  let url = `/api/reports/comprehensive?start_date=${startDate}&end_date=${endDate}&group_by=${groupBy}`;
+  if (agentId) url += `&agent_id=${agentId}`;
+  if (gameType) url += `&game_type=${gameType}`;
+  
+  const result = await api(url);
   
   if (result.success && result.data.length > 0) {
     tbody.innerHTML = result.data.map(d => `
@@ -6630,10 +6729,24 @@ async function loadComprehensive() {
 async function loadRanking() {
   const startDate = document.getElementById('rank-start')?.value;
   const endDate = document.getElementById('rank-end')?.value;
+  const agentId = document.getElementById('rank-agent')?.value;
+  const vipLevel = document.getElementById('rank-vip')?.value;
+  const limit = document.getElementById('rank-limit')?.value || 10;
+  
+  let winnersUrl = `/api/reports/player-ranking?start_date=${startDate}&end_date=${endDate}&rank_type=winner&limit=${limit}`;
+  let losersUrl = `/api/reports/player-ranking?start_date=${startDate}&end_date=${endDate}&rank_type=loser&limit=${limit}`;
+  if (agentId) {
+    winnersUrl += `&agent_id=${agentId}`;
+    losersUrl += `&agent_id=${agentId}`;
+  }
+  if (vipLevel) {
+    winnersUrl += `&vip_level=${vipLevel}`;
+    losersUrl += `&vip_level=${vipLevel}`;
+  }
   
   const [winners, losers] = await Promise.all([
-    api(`/api/reports/player-ranking?start_date=${startDate}&end_date=${endDate}&rank_type=winner&limit=10`),
-    api(`/api/reports/player-ranking?start_date=${startDate}&end_date=${endDate}&rank_type=loser&limit=10`)
+    api(winnersUrl),
+    api(losersUrl)
   ]);
   
   const winnersDiv = document.getElementById('rank-winners');
@@ -6643,15 +6756,15 @@ async function loadRanking() {
     winnersDiv.innerHTML = winners.data.map((p, idx) => `
       <div class="bg-gray-700 p-4 rounded-lg flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-full bg-yellow-600 flex items-center justify-center font-bold">${idx + 1}</div>
+          <div class="w-8 h-8 rounded-full ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-gray-400' : idx === 2 ? 'bg-orange-600' : 'bg-gray-600'} flex items-center justify-center font-bold">${idx + 1}</div>
           <div>
-            <p class="font-medium">${escapeHtml(p.username)}</p>
+            <p class="font-medium">${escapeHtml(p.username)} <span class="text-xs text-purple-400">VIP${p.vip_level || 0}</span></p>
             <p class="text-xs text-gray-400">代理: ${escapeHtml(p.agent_username || '直属')}</p>
           </div>
         </div>
         <div class="text-right">
           <p class="text-lg font-bold text-green-400">${formatCurrency(p.win_loss)}</p>
-          <p class="text-xs text-gray-400">${p.bet_count} 注单</p>
+          <p class="text-xs text-gray-400">投注: ${formatCurrency(p.total_bet)} | ${p.bet_count} 注单</p>
         </div>
       </div>
     `).join('');
@@ -6665,13 +6778,13 @@ async function loadRanking() {
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center font-bold">${idx + 1}</div>
           <div>
-            <p class="font-medium">${escapeHtml(p.username)}</p>
+            <p class="font-medium">${escapeHtml(p.username)} <span class="text-xs text-purple-400">VIP${p.vip_level || 0}</span></p>
             <p class="text-xs text-gray-400">代理: ${escapeHtml(p.agent_username || '直属')}</p>
           </div>
         </div>
         <div class="text-right">
           <p class="text-lg font-bold text-red-400">${formatCurrency(p.win_loss)}</p>
-          <p class="text-xs text-gray-400">${p.bet_count} 注单</p>
+          <p class="text-xs text-gray-400">投注: ${formatCurrency(p.total_bet)} | ${p.bet_count} 注单</p>
         </div>
       </div>
     `).join('');
@@ -6789,6 +6902,36 @@ async function loadAgentPerformance() {
   } else {
     tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-gray-400">暂无数据</td></tr>';
   }
+}
+
+// 导出报表函数
+async function exportTransactions() {
+  const startDate = document.getElementById('trans-start')?.value;
+  const endDate = document.getElementById('trans-end')?.value;
+  const type = document.getElementById('trans-type')?.value;
+  const orderNo = document.getElementById('trans-order')?.value?.trim();
+  const playerSearch = document.getElementById('trans-player')?.value?.trim();
+  
+  let url = `/api/reports/export?type=transactions&start_date=${startDate}&end_date=${endDate}`;
+  if (type) url += `&transaction_type=${type}`;
+  if (orderNo) url += `&order_no=${encodeURIComponent(orderNo)}`;
+  if (playerSearch) url += `&player_search=${encodeURIComponent(playerSearch)}`;
+  
+  window.open(url, '_blank');
+}
+
+async function exportComprehensive() {
+  const startDate = document.getElementById('comp-start')?.value;
+  const endDate = document.getElementById('comp-end')?.value;
+  const groupBy = document.getElementById('comp-group')?.value;
+  const agentId = document.getElementById('comp-agent')?.value;
+  const gameType = document.getElementById('comp-game')?.value;
+  
+  let url = `/api/reports/export?type=comprehensive&start_date=${startDate}&end_date=${endDate}&group_by=${groupBy}`;
+  if (agentId) url += `&agent_id=${agentId}`;
+  if (gameType) url += `&game_type=${gameType}`;
+  
+  window.open(url, '_blank');
 }
 
 function switchReportTab(tab) {

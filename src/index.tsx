@@ -4226,7 +4226,7 @@ app.post('/api/players/transfer', async (c) => {
 // 全流水记录 - 所有交易类型统一查询
 app.get('/api/reports/all-transactions', async (c) => {
   const db = c.env.DB
-  const { start_date, end_date, player_id, type, page = '1', limit = '50' } = c.req.query()
+  const { start_date, end_date, player_id, type, order_no, player_search, page = '1', limit = '50' } = c.req.query()
   
   try {
     const pageNum = parseInt(page)
@@ -4237,6 +4237,7 @@ app.get('/api/reports/all-transactions', async (c) => {
       SELECT 
         t.id,
         t.order_no,
+        t.player_id,
         t.transaction_type,
         CASE t.transaction_type
           WHEN 1 THEN '存款'
@@ -4266,7 +4267,7 @@ app.get('/api/reports/all-transactions', async (c) => {
       LEFT JOIN admins a ON t.operator_id = a.id
       WHERE 1=1
     `
-    let countSql = `SELECT COUNT(*) as total FROM transactions t WHERE 1=1`
+    let countSql = `SELECT COUNT(*) as total FROM transactions t LEFT JOIN players p ON t.player_id = p.id WHERE 1=1`
     const params: any[] = []
     const countParams: any[] = []
     
@@ -4293,6 +4294,20 @@ app.get('/api/reports/all-transactions', async (c) => {
       countSql += ` AND t.transaction_type = ?`
       params.push(parseInt(type))
       countParams.push(parseInt(type))
+    }
+    if (order_no) {
+      sql += ` AND t.order_no LIKE ?`
+      countSql += ` AND t.order_no LIKE ?`
+      params.push(`%${order_no}%`)
+      countParams.push(`%${order_no}%`)
+    }
+    if (player_search) {
+      sql += ` AND (p.username LIKE ? OR p.id = ? OR p.nickname LIKE ?)`
+      countSql += ` AND (p.username LIKE ? OR p.id = ? OR p.nickname LIKE ?)`
+      const searchPattern = `%${player_search}%`
+      const playerId = parseInt(player_search) || 0
+      params.push(searchPattern, playerId, searchPattern)
+      countParams.push(searchPattern, playerId, searchPattern)
     }
     
     sql += ` ORDER BY t.created_at DESC LIMIT ? OFFSET ?`
@@ -4418,7 +4433,7 @@ app.get('/api/reports/comprehensive', async (c) => {
 // 玩家盈亏排名
 app.get('/api/reports/player-ranking', async (c) => {
   const db = c.env.DB
-  const { start_date, end_date, rank_type = 'winner', limit = '20' } = c.req.query()
+  const { start_date, end_date, agent_id, vip_level, rank_type = 'winner', limit = '20' } = c.req.query()
   
   try {
     const limitNum = parseInt(limit)
@@ -4449,6 +4464,14 @@ app.get('/api/reports/player-ranking', async (c) => {
     if (end_date) {
       sql += ` AND date(b.created_at) <= date(?)`
       params.push(end_date)
+    }
+    if (agent_id) {
+      sql += ` AND p.agent_id = ?`
+      params.push(parseInt(agent_id))
+    }
+    if (vip_level) {
+      sql += ` AND p.vip_level = ?`
+      params.push(parseInt(vip_level))
     }
     
     sql += ` GROUP BY p.id`
