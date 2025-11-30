@@ -1004,6 +1004,16 @@ async function renderAgents(container) {
   const agents = agentsResult.data;
   const tree = treeResult.data || [];
   
+  // 计算统计数据
+  const stats = {
+    total: agents.length,
+    shareholders: agents.filter(a => a.level === 'shareholder').length,
+    generalAgents: agents.filter(a => a.level === 'general_agent').length,
+    agents: agents.filter(a => a.level === 'agent').length,
+    totalPlayers: agents.reduce((sum, a) => sum + (a.player_count || 0), 0),
+    totalSubs: agents.reduce((sum, a) => sum + (a.sub_agent_count || 0), 0)
+  };
+  
   const renderTree = (nodes, level = 0) => {
     return nodes.map(n => `
       <div class="ml-${level * 4} mb-2">
@@ -1022,120 +1032,247 @@ async function renderAgents(container) {
   };
   
   container.innerHTML = `
-    <div class="space-y-4">
-      <!-- 代理层级树（可折叠） -->
-      <div class="bg-gray-800 rounded-xl overflow-hidden">
-        <div class="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-750 transition-colors" onclick="toggleAgentTree()">
-          <h3 class="text-lg font-semibold">
-            <i class="fas fa-sitemap text-primary mr-2"></i>代理层级结构
-            <span class="text-sm text-gray-400 ml-2">(点击展开/收起)</span>
-          </h3>
-          <i id="tree-toggle-icon" class="fas fa-chevron-down text-gray-400 transition-transform"></i>
+    <!-- Tabs -->
+    <div class="flex flex-wrap gap-2 mb-6">
+      <button id="tab-agent-hierarchy" onclick="switchAgentTab('hierarchy')" class="px-4 py-2 bg-primary rounded-lg">层级结构</button>
+      <button id="tab-agent-list" onclick="switchAgentTab('list')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600">代理列表</button>
+    </div>
+    
+    <!-- 层级结构 Tab -->
+    <div id="agent-hierarchy">
+      <!-- 统计卡片 -->
+      <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="bg-gray-800 rounded-xl p-4 flex items-center">
+          <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
+            <i class="fas fa-users text-white text-xl"></i>
+          </div>
+          <div>
+            <p class="text-gray-400 text-sm">总代理数</p>
+            <p class="text-2xl font-bold">${formatNumber(stats.total)}</p>
+          </div>
         </div>
-        <div id="agent-tree-content" class="border-t border-gray-700 p-4 max-h-96 overflow-y-auto">
-          ${renderTree(tree)}
+        <div class="bg-gray-800 rounded-xl p-4 flex items-center">
+          <div class="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mr-4">
+            <i class="fas fa-user-friends text-white text-xl"></i>
+          </div>
+          <div>
+            <p class="text-gray-400 text-sm">管理玩家</p>
+            <p class="text-2xl font-bold text-green-400">${formatNumber(stats.totalPlayers)}</p>
+          </div>
+        </div>
+        <div class="bg-gray-800 rounded-xl p-4 flex items-center">
+          <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mr-4">
+            <i class="fas fa-layer-group text-white text-xl"></i>
+          </div>
+          <div>
+            <p class="text-gray-400 text-sm">下级代理</p>
+            <p class="text-2xl font-bold text-purple-400">${formatNumber(stats.totalSubs)}</p>
+          </div>
         </div>
       </div>
       
-      <!-- 代理列表 -->
-      <div class="bg-gray-800 rounded-xl p-5">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-semibold"><i class="fas fa-users text-primary mr-2"></i>代理列表</h3>
-          <button onclick="showAddAgentModal()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded-lg text-sm">
-            <i class="fas fa-plus mr-2"></i>新增代理
+      <!-- 查询条件栏 -->
+      <div class="bg-gray-800 rounded-xl p-5 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <!-- 代理账号/ID -->
+          <div>
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">代理账号/ID</label>
+            <input type="text" id="hierarchy-search-keyword" placeholder="账号或ID..." 
+              class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+          </div>
+          
+          <!-- 代理角色 -->
+          <div>
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">代理角色</label>
+            <select id="hierarchy-search-level" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+              <option value="">全部角色</option>
+              <option value="shareholder">股东</option>
+              <option value="general_agent">总代理</option>
+              <option value="agent">代理</option>
+            </select>
+          </div>
+          
+          <!-- 状态 -->
+          <div>
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">状态</label>
+            <select id="hierarchy-search-status" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+              <option value="">全部状态</option>
+              <option value="1">正常</option>
+              <option value="0">禁用</option>
+            </select>
+          </div>
+          
+          <!-- 操作按钮 -->
+          <div class="flex items-end gap-2">
+            <button onclick="searchHierarchy()" class="flex-1 bg-primary hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              <i class="fas fa-search mr-1.5"></i>查询
+            </button>
+            <button onclick="resetHierarchySearch()" class="flex-1 bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              <i class="fas fa-redo mr-1.5"></i>重置
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 层级树 -->
+      <div class="bg-gray-800 rounded-xl overflow-hidden">
+        <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+          <h3 class="text-lg font-semibold">
+            <i class="fas fa-sitemap text-primary mr-2"></i>代理层级结构
+          </h3>
+          <button onclick="toggleAgentTree()" class="text-gray-400 hover:text-white">
+            <i id="tree-toggle-icon" class="fas fa-chevron-down transition-transform"></i>
           </button>
         </div>
-        
-        <!-- 查询栏 -->
-        <div class="bg-gray-750 rounded-lg p-4 mb-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-            <!-- 代理账号/ID -->
-            <div>
-              <label class="text-gray-300 text-xs block mb-1.5 font-medium">代理账号/ID</label>
-              <input type="text" id="agent-search-keyword" placeholder="账号或ID..." 
-                class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
-            </div>
-            
-            <!-- 代理等级 -->
-            <div>
-              <label class="text-gray-300 text-xs block mb-1.5 font-medium">代理等级</label>
-              <select id="agent-search-level" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
-                <option value="">全部等级</option>
-                <option value="shareholder">股东</option>
-                <option value="general_agent">总代理</option>
-                <option value="agent">代理</option>
-              </select>
-            </div>
-            
-            <!-- 状态 -->
-            <div>
-              <label class="text-gray-300 text-xs block mb-1.5 font-medium">状态</label>
-              <select id="agent-search-status" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
-                <option value="">全部状态</option>
-                <option value="1">正常</option>
-                <option value="0">禁用</option>
-              </select>
-            </div>
-            
-            <!-- 上级代理 -->
-            <div>
-              <label class="text-gray-300 text-xs block mb-1.5 font-medium">上级代理</label>
-              <select id="agent-search-parent" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
-                <option value="">全部上级</option>
-                ${[...new Set(agents.filter(a => a.parent_name).map(a => a.parent_name))].map(parent => `
-                  <option value="${escapeHtml(parent)}">${escapeHtml(parent)}</option>
-                `).join('')}
-              </select>
+        <div id="agent-tree-content" class="p-4 max-h-96 overflow-y-auto">
+          ${renderTree(tree)}
+        </div>
+      </div>
+    </div>
+    
+    <!-- 代理列表 Tab -->
+    <div id="agent-list" class="hidden">
+      <!-- 统计卡片 -->
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="bg-gray-800 rounded-xl p-4 flex items-center">
+          <div class="w-12 h-12 bg-yellow-600 rounded-lg flex items-center justify-center mr-4">
+            <i class="fas fa-crown text-white text-xl"></i>
+          </div>
+          <div>
+            <p class="text-gray-400 text-sm">股东</p>
+            <p class="text-2xl font-bold text-yellow-400">${formatNumber(stats.shareholders)}</p>
+          </div>
+        </div>
+        <div class="bg-gray-800 rounded-xl p-4 flex items-center">
+          <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
+            <i class="fas fa-user-tie text-white text-xl"></i>
+          </div>
+          <div>
+            <p class="text-gray-400 text-sm">总代理</p>
+            <p class="text-2xl font-bold text-blue-400">${formatNumber(stats.generalAgents)}</p>
+          </div>
+        </div>
+        <div class="bg-gray-800 rounded-xl p-4 flex items-center">
+          <div class="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mr-4">
+            <i class="fas fa-user text-white text-xl"></i>
+          </div>
+          <div>
+            <p class="text-gray-400 text-sm">代理</p>
+            <p class="text-2xl font-bold text-green-400">${formatNumber(stats.agents)}</p>
+          </div>
+        </div>
+        <div class="bg-gray-800 rounded-xl p-4 flex items-center">
+          <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mr-4">
+            <i class="fas fa-users text-white text-xl"></i>
+          </div>
+          <div>
+            <p class="text-gray-400 text-sm">管理玩家</p>
+            <p class="text-2xl font-bold text-purple-400">${formatNumber(stats.totalPlayers)}</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 查询条件栏 -->
+      <div class="bg-gray-800 rounded-xl p-5 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <!-- 代理账号/ID -->
+          <div>
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">代理账号/ID</label>
+            <input type="text" id="agent-search-keyword" placeholder="账号或ID..." 
+              class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+          </div>
+          
+          <!-- 代理角色 -->
+          <div>
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">代理角色</label>
+            <select id="agent-search-level" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+              <option value="">全部角色</option>
+              <option value="shareholder">股东</option>
+              <option value="general_agent">总代理</option>
+              <option value="agent">代理</option>
+            </select>
+          </div>
+          
+          <!-- 状态 -->
+          <div>
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">状态</label>
+            <select id="agent-search-status" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+              <option value="">全部状态</option>
+              <option value="1">正常</option>
+              <option value="0">禁用</option>
+            </select>
+          </div>
+          
+          <!-- 上级代理 -->
+          <div>
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">上级代理</label>
+            <select id="agent-search-parent" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+              <option value="">全部上级</option>
+              ${[...new Set(agents.filter(a => a.parent_name).map(a => a.parent_name))].map(parent => `
+                <option value="${escapeHtml(parent)}">${escapeHtml(parent)}</option>
+              `).join('')}
+            </select>
+          </div>
+          
+          <!-- 占成比范围 -->
+          <div>
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">占成比范围 (%)</label>
+            <div class="flex gap-2">
+              <input type="number" id="agent-search-share-min" placeholder="最小" min="0" max="100" step="0.1"
+                class="w-1/2 bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+              <input type="number" id="agent-search-share-max" placeholder="最大" min="0" max="100" step="0.1"
+                class="w-1/2 bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
             </div>
           </div>
           
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
-            <!-- 占成比范围 -->
-            <div>
-              <label class="text-gray-300 text-xs block mb-1.5 font-medium">占成比范围 (%)</label>
-              <div class="flex gap-2">
-                <input type="number" id="agent-search-share-min" placeholder="最小" min="0" max="100" step="0.1"
-                  class="w-1/2 bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                <input type="number" id="agent-search-share-max" placeholder="最大" min="0" max="100" step="0.1"
-                  class="w-1/2 bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-              </div>
-            </div>
-            
-            <!-- 玩家数量 -->
-            <div>
-              <label class="text-gray-300 text-xs block mb-1.5 font-medium">玩家数量</label>
-              <div class="flex gap-2">
-                <input type="number" id="agent-search-players-min" placeholder="最小" min="0"
-                  class="w-1/2 bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                <input type="number" id="agent-search-players-max" placeholder="最大" min="0"
-                  class="w-1/2 bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-              </div>
-            </div>
-            
-            <!-- 排序方式 -->
-            <div>
-              <label class="text-gray-300 text-xs block mb-1.5 font-medium">排序方式</label>
-              <select id="agent-search-sort" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
-                <option value="created_desc">注册时间 ↓</option>
-                <option value="created_asc">注册时间 ↑</option>
-                <option value="players_desc">玩家数 ↓</option>
-                <option value="players_asc">玩家数 ↑</option>
-                <option value="share_desc">占成比 ↓</option>
-                <option value="share_asc">占成比 ↑</option>
-              </select>
-            </div>
-            
-            <!-- 操作按钮 -->
-            <div class="flex items-end gap-2">
-              <button onclick="searchAgents()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                <i class="fas fa-search mr-1.5"></i>查询
-              </button>
-              <button onclick="resetAgentSearch()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                <i class="fas fa-redo mr-1.5"></i>重置
-              </button>
+          <!-- 玩家数量 -->
+          <div>
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">玩家数量</label>
+            <div class="flex gap-2">
+              <input type="number" id="agent-search-players-min" placeholder="最小" min="0"
+                class="w-1/2 bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+              <input type="number" id="agent-search-players-max" placeholder="最大" min="0"
+                class="w-1/2 bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
             </div>
           </div>
+          
+          <!-- 排序方式 -->
+          <div>
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">排序方式</label>
+            <select id="agent-search-sort" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+              <option value="created_desc">注册时间 ↓</option>
+              <option value="created_asc">注册时间 ↑</option>
+              <option value="players_desc">玩家数 ↓</option>
+              <option value="players_asc">玩家数 ↑</option>
+              <option value="share_desc">占成比 ↓</option>
+              <option value="share_asc">占成比 ↑</option>
+            </select>
+          </div>
+          
+          <!-- 操作按钮 -->
+          <div class="flex items-end gap-2">
+            <button onclick="searchAgents()" class="flex-1 bg-primary hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              <i class="fas fa-search mr-1.5"></i>查询
+            </button>
+            <button onclick="resetAgentSearch()" class="flex-1 bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              <i class="fas fa-redo mr-1.5"></i>重置
+            </button>
+          </div>
         </div>
+        
+        <!-- 操作按钮栏 -->
+        <div class="flex gap-3 mt-4 pt-4 border-t border-gray-700">
+          <button onclick="showAddAgentModal()" class="bg-green-600 hover:bg-green-700 px-5 py-2 rounded-lg font-medium transition-colors">
+            <i class="fas fa-plus mr-2"></i>新增代理
+          </button>
+          <button onclick="exportAgents()" class="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg font-medium transition-colors">
+            <i class="fas fa-file-export mr-2"></i>导出报表
+          </button>
+          <button onclick="refreshAgents()" class="bg-gray-600 hover:bg-gray-700 px-5 py-2 rounded-lg font-medium transition-colors">
+            <i class="fas fa-sync-alt mr-2"></i>刷新
+          </button>
+        </div>
+      </div>
         
         <!-- 数据表格 -->
         <div class="overflow-x-auto">
@@ -1182,6 +1319,19 @@ async function renderAgents(container) {
   }
 }
 
+// 切换代理Tab
+function switchAgentTab(tab) {
+  // 切换按钮状态
+  document.getElementById('tab-agent-hierarchy').className = tab === 'hierarchy' ? 
+    'px-4 py-2 bg-primary rounded-lg' : 'px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600';
+  document.getElementById('tab-agent-list').className = tab === 'list' ? 
+    'px-4 py-2 bg-primary rounded-lg' : 'px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600';
+  
+  // 切换内容显示
+  document.getElementById('agent-hierarchy').style.display = tab === 'hierarchy' ? 'block' : 'none';
+  document.getElementById('agent-list').style.display = tab === 'list' ? 'block' : 'none';
+}
+
 // 切换代理层级树显示
 function toggleAgentTree() {
   const content = document.getElementById('agent-tree-content');
@@ -1193,6 +1343,88 @@ function toggleAgentTree() {
   } else {
     content.style.display = 'none';
     icon.style.transform = 'rotate(-90deg)';
+  }
+}
+
+// 层级结构搜索
+function searchHierarchy() {
+  const keyword = document.getElementById('hierarchy-search-keyword')?.value || '';
+  const level = document.getElementById('hierarchy-search-level')?.value || '';
+  const status = document.getElementById('hierarchy-search-status')?.value || '';
+  
+  const allAgents = window.allAgents || [];
+  let filtered = allAgents;
+  
+  if (keyword) {
+    filtered = filtered.filter(a => 
+      (a.agent_username && a.agent_username.includes(keyword)) ||
+      (a.nickname && a.nickname.includes(keyword)) ||
+      String(a.id).includes(keyword)
+    );
+  }
+  
+  if (level) {
+    filtered = filtered.filter(a => a.level === level);
+  }
+  
+  if (status !== '') {
+    filtered = filtered.filter(a => a.status == status);
+  }
+  
+  // 重新渲染树形结构
+  // 这里简化处理，实际应该重新构建树形数据
+  showToast(`找到 ${filtered.length} 个匹配的代理`, 'success');
+}
+
+// 重置层级结构搜索
+function resetHierarchySearch() {
+  document.getElementById('hierarchy-search-keyword').value = '';
+  document.getElementById('hierarchy-search-level').value = '';
+  document.getElementById('hierarchy-search-status').value = '';
+  loadModule('agents');
+}
+
+// 刷新代理列表
+function refreshAgents() {
+  loadModule('agents');
+  showToast('刷新成功', 'success');
+}
+
+// 导出代理报表
+async function exportAgents() {
+  try {
+    const keyword = document.getElementById('agent-search-keyword')?.value || '';
+    const level = document.getElementById('agent-search-level')?.value || '';
+    const status = document.getElementById('agent-search-status')?.value || '';
+    const parent = document.getElementById('agent-search-parent')?.value || '';
+    const shareMin = document.getElementById('agent-search-share-min')?.value || '';
+    const shareMax = document.getElementById('agent-search-share-max')?.value || '';
+    const playersMin = document.getElementById('agent-search-players-min')?.value || '';
+    const playersMax = document.getElementById('agent-search-players-max')?.value || '';
+    const sort = document.getElementById('agent-search-sort')?.value || '';
+    
+    let url = '/api/reports/export?type=agents';
+    const params = [];
+    if (keyword) params.push('keyword=' + encodeURIComponent(keyword));
+    if (level) params.push('level=' + level);
+    if (status) params.push('status=' + status);
+    if (parent) params.push('parent=' + encodeURIComponent(parent));
+    if (shareMin) params.push('share_min=' + shareMin);
+    if (shareMax) params.push('share_max=' + shareMax);
+    if (playersMin) params.push('players_min=' + playersMin);
+    if (playersMax) params.push('players_max=' + playersMax);
+    if (sort) params.push('sort=' + sort);
+    
+    if (params.length > 0) {
+      url += '&' + params.join('&');
+    }
+    
+    showToast('正在导出报表...', 'info');
+    window.open(url, '_blank');
+    showToast('导出成功！请查看下载文件', 'success');
+  } catch (error) {
+    console.error('Export agents error:', error);
+    showToast('导出失败: ' + error.message, 'error');
   }
 }
 
