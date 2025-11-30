@@ -4223,6 +4223,460 @@ app.post('/api/players/transfer', async (c) => {
   }
 })
 
+// 全流水记录 - 所有交易类型统一查询
+app.get('/api/reports/all-transactions', async (c) => {
+  const db = c.env.DB
+  const { start_date, end_date, player_id, type, page = '1', limit = '50' } = c.req.query()
+  
+  try {
+    const pageNum = parseInt(page)
+    const limitNum = parseInt(limit)
+    const offset = (pageNum - 1) * limitNum
+    
+    let sql = `
+      SELECT 
+        t.id,
+        t.order_no,
+        t.transaction_type,
+        CASE t.transaction_type
+          WHEN 1 THEN '存款'
+          WHEN 2 THEN '取款'
+          WHEN 3 THEN '投注扣款'
+          WHEN 4 THEN '派彩增加'
+          WHEN 5 THEN '红利赠送'
+          WHEN 6 THEN '洗码返水'
+          WHEN 7 THEN '人工增加'
+          WHEN 8 THEN '人工扣除'
+          WHEN 9 THEN '转账转出'
+          WHEN 10 THEN '转账转入'
+          ELSE '其他'
+        END as type_name,
+        t.balance_before,
+        t.amount,
+        t.balance_after,
+        t.related_order_id,
+        t.game_type,
+        t.remark,
+        t.created_at,
+        p.username as player_name,
+        p.nickname as player_nickname,
+        a.username as operator_name
+      FROM transactions t
+      LEFT JOIN players p ON t.player_id = p.id
+      LEFT JOIN admins a ON t.operator_id = a.id
+      WHERE 1=1
+    `
+    let countSql = `SELECT COUNT(*) as total FROM transactions t WHERE 1=1`
+    const params: any[] = []
+    const countParams: any[] = []
+    
+    if (start_date) {
+      sql += ` AND date(t.created_at) >= date(?)`
+      countSql += ` AND date(t.created_at) >= date(?)`
+      params.push(start_date)
+      countParams.push(start_date)
+    }
+    if (end_date) {
+      sql += ` AND date(t.created_at) <= date(?)`
+      countSql += ` AND date(t.created_at) <= date(?)`
+      params.push(end_date)
+      countParams.push(end_date)
+    }
+    if (player_id) {
+      sql += ` AND t.player_id = ?`
+      countSql += ` AND t.player_id = ?`
+      params.push(parseInt(player_id))
+      countParams.push(parseInt(player_id))
+    }
+    if (type) {
+      sql += ` AND t.transaction_type = ?`
+      countSql += ` AND t.transaction_type = ?`
+      params.push(parseInt(type))
+      countParams.push(parseInt(type))
+    }
+    
+    sql += ` ORDER BY t.created_at DESC LIMIT ? OFFSET ?`
+    params.push(limitNum, offset)
+    
+    const [transactions, countResult] = await Promise.all([
+      db.prepare(sql).bind(...params).all(),
+      db.prepare(countSql).bind(...countParams).first()
+    ])
+    
+    return c.json({
+      success: true,
+      data: transactions.results,
+      total: (countResult as any).total,
+      page: pageNum,
+      limit: limitNum
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// 综合报表 - 按日期/代理/游戏维度
+app.get('/api/reports/comprehensive', async (c) => {
+  const db = c.env.DB
+  const { start_date, end_date, agent_id, game_type, group_by = 'date' } = c.req.query()
+  
+  try {
+    let sql = ''
+    const params: any[] = []
+    
+    if (group_by === 'date') {
+      // 按日期分组
+      sql = `
+        SELECT 
+          date(b.created_at) as dimension,
+          SUM(b.bet_amount) as total_bet,
+          SUM(CASE WHEN b.bet_status = 1 THEN b.payout - b.bet_amount ELSE -b.bet_amount END) as total_win_loss,
+          -SUM(CASE WHEN b.bet_status = 1 THEN b.payout - b.bet_amount ELSE -b.bet_amount END) as company_profit,
+          SUM(b.valid_bet_amount * COALESCE(a.commission_ratio, 0)) as agent_commission,
+          -SUM(CASE WHEN b.bet_status = 1 THEN b.payout - b.bet_amount ELSE -b.bet_amount END) - SUM(b.valid_bet_amount * COALESCE(a.commission_ratio, 0)) as net_profit,
+          COUNT(DISTINCT b.player_id) as player_count,
+          COUNT(*) as bet_count
+        FROM bets b
+        LEFT JOIN players p ON b.player_id = p.id
+        LEFT JOIN agents a ON p.agent_id = a.id
+        WHERE 1=1
+      `
+    } else if (group_by === 'agent') {
+      // 按代理分组
+      sql = `
+        SELECT 
+          COALESCE(a.agent_username, '直属') as dimension,
+          p.agent_id,
+          SUM(b.bet_amount) as total_bet,
+          SUM(CASE WHEN b.bet_status = 1 THEN b.payout - b.bet_amount ELSE -b.bet_amount END) as total_win_loss,
+          -SUM(CASE WHEN b.bet_status = 1 THEN b.payout - b.bet_amount ELSE -b.bet_amount END) as company_profit,
+          SUM(b.valid_bet_amount * COALESCE(a.commission_ratio, 0)) as agent_commission,
+          -SUM(CASE WHEN b.bet_status = 1 THEN b.payout - b.bet_amount ELSE -b.bet_amount END) - SUM(b.valid_bet_amount * COALESCE(a.commission_ratio, 0)) as net_profit,
+          COUNT(DISTINCT b.player_id) as player_count,
+          COUNT(*) as bet_count
+        FROM bets b
+        LEFT JOIN players p ON b.player_id = p.id
+        LEFT JOIN agents a ON p.agent_id = a.id
+        WHERE 1=1
+      `
+    } else if (group_by === 'game') {
+      // 按游戏分组
+      sql = `
+        SELECT 
+          b.game_type as dimension,
+          SUM(b.bet_amount) as total_bet,
+          SUM(CASE WHEN b.bet_status = 1 THEN b.payout - b.bet_amount ELSE -b.bet_amount END) as total_win_loss,
+          -SUM(CASE WHEN b.bet_status = 1 THEN b.payout - b.bet_amount ELSE -b.bet_amount END) as company_profit,
+          SUM(b.valid_bet_amount * COALESCE(a.commission_ratio, 0)) as agent_commission,
+          -SUM(CASE WHEN b.bet_status = 1 THEN b.payout - b.bet_amount ELSE -b.bet_amount END) - SUM(b.valid_bet_amount * COALESCE(a.commission_ratio, 0)) as net_profit,
+          COUNT(DISTINCT b.player_id) as player_count,
+          COUNT(*) as bet_count
+        FROM bets b
+        LEFT JOIN players p ON b.player_id = p.id
+        LEFT JOIN agents a ON p.agent_id = a.id
+        WHERE 1=1
+      `
+    }
+    
+    if (start_date) {
+      sql += ` AND date(b.created_at) >= date(?)`
+      params.push(start_date)
+    }
+    if (end_date) {
+      sql += ` AND date(b.created_at) <= date(?)`
+      params.push(end_date)
+    }
+    if (agent_id) {
+      sql += ` AND p.agent_id = ?`
+      params.push(parseInt(agent_id))
+    }
+    if (game_type) {
+      sql += ` AND b.game_type = ?`
+      params.push(game_type)
+    }
+    
+    if (group_by === 'date') {
+      sql += ` GROUP BY date(b.created_at) ORDER BY date(b.created_at) DESC`
+    } else if (group_by === 'agent') {
+      sql += ` GROUP BY p.agent_id ORDER BY total_bet DESC`
+    } else if (group_by === 'game') {
+      sql += ` GROUP BY b.game_type ORDER BY total_bet DESC`
+    }
+    
+    const result = await db.prepare(sql).bind(...params).all()
+    
+    return c.json({
+      success: true,
+      data: result.results,
+      group_by
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// 玩家盈亏排名
+app.get('/api/reports/player-ranking', async (c) => {
+  const db = c.env.DB
+  const { start_date, end_date, rank_type = 'winner', limit = '20' } = c.req.query()
+  
+  try {
+    const limitNum = parseInt(limit)
+    let sql = `
+      SELECT 
+        p.id,
+        p.username,
+        p.nickname,
+        p.vip_level,
+        a.agent_username,
+        SUM(b.bet_amount) as total_bet,
+        SUM(b.valid_bet_amount) as total_valid_bet,
+        SUM(CASE WHEN b.bet_status = 1 THEN b.payout ELSE 0 END) as total_payout,
+        SUM(CASE WHEN b.bet_status = 1 THEN b.payout - b.bet_amount ELSE -b.bet_amount END) as win_loss,
+        COUNT(*) as bet_count,
+        MAX(CASE WHEN b.bet_status = 1 THEN b.payout - b.bet_amount ELSE 0 END) as max_win
+      FROM bets b
+      LEFT JOIN players p ON b.player_id = p.id
+      LEFT JOIN agents a ON p.agent_id = a.id
+      WHERE 1=1
+    `
+    const params: any[] = []
+    
+    if (start_date) {
+      sql += ` AND date(b.created_at) >= date(?)`
+      params.push(start_date)
+    }
+    if (end_date) {
+      sql += ` AND date(b.created_at) <= date(?)`
+      params.push(end_date)
+    }
+    
+    sql += ` GROUP BY p.id`
+    
+    if (rank_type === 'winner') {
+      sql += ` ORDER BY win_loss DESC LIMIT ?`
+    } else {
+      sql += ` ORDER BY win_loss ASC LIMIT ?`
+    }
+    params.push(limitNum)
+    
+    const result = await db.prepare(sql).bind(...params).all()
+    
+    return c.json({
+      success: true,
+      data: result.results,
+      rank_type
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// 每日盈亏汇总
+app.get('/api/reports/daily-summary', async (c) => {
+  const db = c.env.DB
+  const { start_date, end_date } = c.req.query()
+  
+  try {
+    let sql = `
+      SELECT 
+        date(created_at) as date,
+        -- 投注统计
+        SUM(bet_amount) as total_bet,
+        SUM(valid_bet_amount) as total_valid_bet,
+        COUNT(*) as bet_count,
+        COUNT(DISTINCT player_id) as active_players,
+        -- 输赢统计
+        SUM(CASE WHEN bet_status = 1 THEN payout ELSE 0 END) as total_payout,
+        SUM(CASE WHEN bet_status = 1 THEN payout - bet_amount ELSE -bet_amount END) as player_win_loss,
+        -SUM(CASE WHEN bet_status = 1 THEN payout - bet_amount ELSE -bet_amount END) as company_profit,
+        -- 平均值
+        AVG(bet_amount) as avg_bet,
+        AVG(CASE WHEN bet_status = 1 THEN payout - bet_amount ELSE -bet_amount END) as avg_win_loss
+      FROM bets
+      WHERE 1=1
+    `
+    const params: any[] = []
+    
+    if (start_date) {
+      sql += ` AND date(created_at) >= date(?)`
+      params.push(start_date)
+    }
+    if (end_date) {
+      sql += ` AND date(created_at) <= date(?)`
+      params.push(end_date)
+    }
+    
+    sql += ` GROUP BY date(created_at) ORDER BY date(created_at) DESC`
+    
+    const result = await db.prepare(sql).bind(...params).all()
+    
+    // 计算累计统计
+    const summary = await db.prepare(`
+      SELECT 
+        SUM(bet_amount) as total_bet,
+        SUM(valid_bet_amount) as total_valid_bet,
+        SUM(CASE WHEN bet_status = 1 THEN payout ELSE 0 END) as total_payout,
+        -SUM(CASE WHEN bet_status = 1 THEN payout - bet_amount ELSE -bet_amount END) as total_company_profit,
+        COUNT(*) as total_bet_count,
+        COUNT(DISTINCT player_id) as total_players
+      FROM bets
+      WHERE date(created_at) >= date(?) AND date(created_at) <= date(?)
+    `).bind(start_date || '2024-01-01', end_date || '2099-12-31').first()
+    
+    return c.json({
+      success: true,
+      data: result.results,
+      summary: summary || {}
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// 游戏类型营收报表
+app.get('/api/reports/game-revenue', async (c) => {
+  const db = c.env.DB
+  const { start_date, end_date } = c.req.query()
+  
+  try {
+    let sql = `
+      SELECT 
+        game_type,
+        CASE game_type
+          WHEN 'baccarat' THEN '百家乐'
+          WHEN 'roulette' THEN '轮盘'
+          WHEN 'dragon_tiger' THEN '龙虎'
+          WHEN 'sicbo' THEN '骰宝'
+          WHEN 'blackjack' THEN '21点'
+          ELSE game_type
+        END as game_name,
+        COUNT(*) as bet_count,
+        COUNT(DISTINCT player_id) as player_count,
+        SUM(bet_amount) as total_bet,
+        SUM(valid_bet_amount) as total_valid_bet,
+        SUM(CASE WHEN bet_status = 1 THEN payout ELSE 0 END) as total_payout,
+        SUM(CASE WHEN bet_status = 1 THEN payout - bet_amount ELSE -bet_amount END) as player_win_loss,
+        -SUM(CASE WHEN bet_status = 1 THEN payout - bet_amount ELSE -bet_amount END) as game_revenue,
+        AVG(bet_amount) as avg_bet,
+        ROUND(-SUM(CASE WHEN bet_status = 1 THEN payout - bet_amount ELSE -bet_amount END) * 100.0 / NULLIF(SUM(bet_amount), 0), 2) as win_rate
+      FROM bets
+      WHERE 1=1
+    `
+    const params: any[] = []
+    
+    if (start_date) {
+      sql += ` AND date(created_at) >= date(?)`
+      params.push(start_date)
+    }
+    if (end_date) {
+      sql += ` AND date(created_at) <= date(?)`
+      params.push(end_date)
+    }
+    
+    sql += ` GROUP BY game_type ORDER BY game_revenue DESC`
+    
+    const result = await db.prepare(sql).bind(...params).all()
+    
+    return c.json({
+      success: true,
+      data: result.results
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// 代理业绩统计（含下线递归）
+app.get('/api/reports/agent-performance', async (c) => {
+  const db = c.env.DB
+  const { start_date, end_date, agent_id } = c.req.query()
+  
+  try {
+    // 获取所有代理
+    const agents = await db.prepare(`
+      SELECT id, agent_username, nickname, level, parent_agent_id, share_ratio, commission_ratio
+      FROM agents
+      WHERE status = 1
+    `).all()
+    
+    // 构建代理树（包含所有下级）
+    const buildAgentTree = (agentId: number | null, allAgents: any[]): number[] => {
+      const result: number[] = agentId !== null ? [agentId] : []
+      const children = allAgents.filter((a: any) => a.parent_agent_id === agentId)
+      children.forEach((child: any) => {
+        result.push(...buildAgentTree(child.id, allAgents))
+      })
+      return result
+    }
+    
+    const targetAgentIds = agent_id ? buildAgentTree(parseInt(agent_id), agents.results as any[]) : agents.results.map((a: any) => a.id)
+    
+    // 查询每个代理及其下线的业绩
+    const performanceData = []
+    
+    for (const agent of agents.results as any[]) {
+      if (agent_id && !targetAgentIds.includes(agent.id)) continue
+      
+      const downlineIds = buildAgentTree(agent.id, agents.results as any[])
+      
+      if (downlineIds.length === 0) continue
+      
+      const placeholders = downlineIds.map(() => '?').join(',')
+      let sql = `
+        SELECT 
+          COUNT(DISTINCT p.id) as player_count,
+          SUM(b.bet_amount) as total_bet,
+          SUM(b.valid_bet_amount) as total_valid_bet,
+          SUM(CASE WHEN b.bet_status = 1 THEN b.payout ELSE 0 END) as total_payout,
+          SUM(CASE WHEN b.bet_status = 1 THEN b.payout - b.bet_amount ELSE -b.bet_amount END) as player_win_loss,
+          -SUM(CASE WHEN b.bet_status = 1 THEN b.payout - b.bet_amount ELSE -b.bet_amount END) as company_profit,
+          COUNT(*) as bet_count
+        FROM players p
+        LEFT JOIN bets b ON p.id = b.player_id
+        WHERE p.agent_id IN (${placeholders})
+      `
+      const params: any[] = [...downlineIds]
+      
+      if (start_date) {
+        sql += ` AND date(b.created_at) >= date(?)`
+        params.push(start_date)
+      }
+      if (end_date) {
+        sql += ` AND date(b.created_at) <= date(?)`
+        params.push(end_date)
+      }
+      
+      const stats = await db.prepare(sql).bind(...params).first() as any
+      
+      if (stats && stats.total_bet > 0) {
+        performanceData.push({
+          agent_id: agent.id,
+          agent_username: agent.agent_username,
+          nickname: agent.nickname,
+          level: agent.level,
+          share_ratio: agent.share_ratio,
+          commission_ratio: agent.commission_ratio,
+          downline_count: downlineIds.length - 1,
+          ...stats,
+          agent_commission: (stats.total_valid_bet || 0) * (agent.commission_ratio || 0),
+          net_profit: (stats.company_profit || 0) - ((stats.total_valid_bet || 0) * (agent.commission_ratio || 0))
+        })
+      }
+    }
+    
+    // 按营收排序
+    performanceData.sort((a, b) => (b.company_profit || 0) - (a.company_profit || 0))
+    
+    return c.json({
+      success: true,
+      data: performanceData
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
 // ========================================
 // 9. 内容管理 CMS API
 // ========================================
@@ -6355,7 +6809,7 @@ app.get('*', (c) => {
     </main>
   </div>
 
-  <script src="/static/app.js?v=20251130-9"></script>
+  <script src="/static/app.js?v=20251130-10"></script>
 </body>
 </html>
   `)

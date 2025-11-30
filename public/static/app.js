@@ -5618,16 +5618,241 @@ async function renderReports(container) {
     
     <!-- Tabs -->
     <div class="flex flex-wrap gap-2 mb-6">
-      <button id="tab-account" onclick="switchReportTab('account')" class="px-4 py-2 bg-primary rounded-lg text-sm">账户明细</button>
-      <button id="tab-settle" onclick="switchReportTab('settle')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 text-sm">结算报表</button>
-      <button id="tab-daily" onclick="switchReportTab('daily')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 text-sm">日结算报表</button>
-      <button id="tab-profit" onclick="switchReportTab('profit')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 text-sm">盈亏分析</button>
-      <button id="tab-settlement" onclick="switchReportTab('settlement')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 text-sm">对账结算</button>
-      <button id="tab-game" onclick="switchReportTab('game')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 text-sm">游戏报表</button>
-      <button id="tab-rank" onclick="switchReportTab('rank')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 text-sm">盈亏排行</button>
-      <button id="tab-transfers" onclick="switchReportTab('transfers')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 text-sm">转账记录</button>
+      <button id="tab-transactions" onclick="switchReportTab('transactions')" class="px-4 py-2 bg-primary rounded-lg text-sm"><i class="fas fa-list mr-1"></i>全流水记录</button>
+      <button id="tab-comprehensive" onclick="switchReportTab('comprehensive')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 text-sm"><i class="fas fa-chart-pie mr-1"></i>综合报表</button>
+      <button id="tab-ranking" onclick="switchReportTab('ranking')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 text-sm"><i class="fas fa-trophy mr-1"></i>玩家排名</button>
+      <button id="tab-daily-summary" onclick="switchReportTab('daily-summary')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 text-sm"><i class="fas fa-calendar-day mr-1"></i>每日汇总</button>
+      <button id="tab-game-revenue" onclick="switchReportTab('game-revenue')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 text-sm"><i class="fas fa-gamepad mr-1"></i>游戏营收</button>
+      <button id="tab-agent-perf" onclick="switchReportTab('agent-perf')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 text-sm"><i class="fas fa-users mr-1"></i>代理业绩</button>
+      <button id="tab-account" onclick="switchReportTab('account')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 text-sm">账户明细</button>
+      <button id="tab-daily" onclick="switchReportTab('daily')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 text-sm">日结算</button>
     </div>
     
+    <!-- 1. 全流水记录 -->
+    <div id="report-transactions" class="bg-gray-800 rounded-xl overflow-hidden">
+      <div class="p-4 border-b border-gray-700 flex flex-wrap gap-4 items-end">
+        <div>
+          <label class="text-gray-400 text-xs block mb-1">开始日期</label>
+          <input type="date" id="trans-start" value="${dayjs().subtract(7, 'day').format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="text-gray-400 text-xs block mb-1">结束日期</label>
+          <input type="date" id="trans-end" value="${dayjs().format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="text-gray-400 text-xs block mb-1">交易类型</label>
+          <select id="trans-type" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+            <option value="">全部</option>
+            <option value="1">存款</option>
+            <option value="2">取款</option>
+            <option value="3">投注扣款</option>
+            <option value="4">派彩增加</option>
+            <option value="5">红利赠送</option>
+            <option value="6">洗码返水</option>
+            <option value="7">人工增加</option>
+            <option value="8">人工扣除</option>
+          </select>
+        </div>
+        <button onclick="loadTransactions()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded text-sm"><i class="fas fa-search mr-2"></i>查询</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full data-table">
+          <thead class="bg-gray-700">
+            <tr>
+              <th class="text-left p-3">订单号</th>
+              <th class="text-left p-3">类型</th>
+              <th class="text-left p-3">玩家</th>
+              <th class="text-right p-3">变动前</th>
+              <th class="text-right p-3">变动金额</th>
+              <th class="text-right p-3">变动后</th>
+              <th class="text-left p-3">关联订单</th>
+              <th class="text-left p-3">时间</th>
+            </tr>
+          </thead>
+          <tbody id="trans-tbody">
+            <tr><td colspan="8" class="p-8 text-center text-gray-400">请点击查询按钮加载数据</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="trans-pagination" class="p-4 border-t border-gray-700 flex justify-between items-center"></div>
+    </div>
+
+    <!-- 2. 综合报表 -->
+    <div id="report-comprehensive" class="hidden bg-gray-800 rounded-xl overflow-hidden">
+      <div class="p-4 border-b border-gray-700 flex flex-wrap gap-4 items-end">
+        <div>
+          <label class="text-gray-400 text-xs block mb-1">开始日期</label>
+          <input type="date" id="comp-start" value="${dayjs().subtract(30, 'day').format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="text-gray-400 text-xs block mb-1">结束日期</label>
+          <input type="date" id="comp-end" value="${dayjs().format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="text-gray-400 text-xs block mb-1">分组维度</label>
+          <select id="comp-group" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+            <option value="date">按日期</option>
+            <option value="agent">按代理</option>
+            <option value="game">按游戏</option>
+          </select>
+        </div>
+        <button onclick="loadComprehensive()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded text-sm"><i class="fas fa-chart-bar mr-2"></i>生成报表</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full data-table">
+          <thead class="bg-gray-700">
+            <tr>
+              <th class="text-left p-3">维度</th>
+              <th class="text-right p-3">总投注</th>
+              <th class="text-right p-3">总输赢</th>
+              <th class="text-right p-3">公司盈亏</th>
+              <th class="text-right p-3">代理佣金</th>
+              <th class="text-right p-3">净利润</th>
+              <th class="text-right p-3">玩家数</th>
+              <th class="text-right p-3">注单数</th>
+            </tr>
+          </thead>
+          <tbody id="comp-tbody">
+            <tr><td colspan="8" class="p-8 text-center text-gray-400">请选择条件并生成报表</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 3. 玩家排名 -->
+    <div id="report-ranking" class="hidden bg-gray-800 rounded-xl overflow-hidden">
+      <div class="p-4 border-b border-gray-700 flex flex-wrap gap-4 items-end">
+        <div>
+          <label class="text-gray-400 text-xs block mb-1">开始日期</label>
+          <input type="date" id="rank-start" value="${dayjs().subtract(7, 'day').format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="text-gray-400 text-xs block mb-1">结束日期</label>
+          <input type="date" id="rank-end" value="${dayjs().format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="text-gray-400 text-xs block mb-1">排名类型</label>
+          <select id="rank-type" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+            <option value="winner">赢得最多</option>
+            <option value="loser">输得最多</option>
+          </select>
+        </div>
+        <button onclick="loadRanking()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded text-sm"><i class="fas fa-trophy mr-2"></i>查看排名</button>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4">
+        <div>
+          <h3 class="text-lg font-semibold mb-4 text-green-400"><i class="fas fa-arrow-up mr-2"></i>赢得最多</h3>
+          <div id="rank-winners" class="space-y-2"></div>
+        </div>
+        <div>
+          <h3 class="text-lg font-semibold mb-4 text-red-400"><i class="fas fa-arrow-down mr-2"></i>输得最多</h3>
+          <div id="rank-losers" class="space-y-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. 每日盈亏汇总 -->
+    <div id="report-daily-summary" class="hidden bg-gray-800 rounded-xl overflow-hidden">
+      <div class="p-4 border-b border-gray-700 flex flex-wrap gap-4 items-end">
+        <div>
+          <label class="text-gray-400 text-xs block mb-1">开始日期</label>
+          <input type="date" id="summary-start" value="${dayjs().subtract(30, 'day').format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="text-gray-400 text-xs block mb-1">结束日期</label>
+          <input type="date" id="summary-end" value="${dayjs().format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+        </div>
+        <button onclick="loadDailySummary()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded text-sm"><i class="fas fa-calendar-check mr-2"></i>查询</button>
+      </div>
+      <!-- 汇总卡片 -->
+      <div id="summary-cards" class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border-b border-gray-700"></div>
+      <div class="overflow-x-auto">
+        <table class="w-full data-table">
+          <thead class="bg-gray-700">
+            <tr>
+              <th class="text-left p-3">日期</th>
+              <th class="text-right p-3">活跃玩家</th>
+              <th class="text-right p-3">注单数</th>
+              <th class="text-right p-3">总投注</th>
+              <th class="text-right p-3">总派彩</th>
+              <th class="text-right p-3">玩家输赢</th>
+              <th class="text-right p-3">公司盈亏</th>
+            </tr>
+          </thead>
+          <tbody id="summary-tbody">
+            <tr><td colspan="7" class="p-8 text-center text-gray-400">请点击查询按钮加载数据</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 5. 游戏营收报表 -->
+    <div id="report-game-revenue" class="hidden bg-gray-800 rounded-xl overflow-hidden">
+      <div class="p-4 border-b border-gray-700 flex flex-wrap gap-4 items-end">
+        <div>
+          <label class="text-gray-400 text-xs block mb-1">开始日期</label>
+          <input type="date" id="game-start" value="${dayjs().subtract(30, 'day').format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="text-gray-400 text-xs block mb-1">结束日期</label>
+          <input type="date" id="game-end" value="${dayjs().format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+        </div>
+        <button onclick="loadGameRevenue()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded text-sm"><i class="fas fa-search mr-2"></i>查询</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full data-table">
+          <thead class="bg-gray-700">
+            <tr>
+              <th class="text-left p-3">游戏类型</th>
+              <th class="text-right p-3">注单数</th>
+              <th class="text-right p-3">玩家数</th>
+              <th class="text-right p-3">总投注</th>
+              <th class="text-right p-3">总派彩</th>
+              <th class="text-right p-3">游戏营收</th>
+              <th class="text-right p-3">胜率%</th>
+            </tr>
+          </thead>
+          <tbody id="game-tbody">
+            <tr><td colspan="7" class="p-8 text-center text-gray-400">请点击查询按钮加载数据</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 6. 代理业绩统计 -->
+    <div id="report-agent-perf" class="hidden bg-gray-800 rounded-xl overflow-hidden">
+      <div class="p-4 border-b border-gray-700 flex flex-wrap gap-4 items-end">
+        <div>
+          <label class="text-gray-400 text-xs block mb-1">开始日期</label>
+          <input type="date" id="agent-start" value="${dayjs().subtract(30, 'day').format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="text-gray-400 text-xs block mb-1">结束日期</label>
+          <input type="date" id="agent-end" value="${dayjs().format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+        </div>
+        <button onclick="loadAgentPerformance()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded text-sm"><i class="fas fa-search mr-2"></i>查询</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full data-table">
+          <thead class="bg-gray-700">
+            <tr>
+              <th class="text-left p-3">代理账号</th>
+              <th class="text-left p-3">级别</th>
+              <th class="text-right p-3">下线数</th>
+              <th class="text-right p-3">玩家数</th>
+              <th class="text-right p-3">总投注</th>
+              <th class="text-right p-3">公司盈亏</th>
+              <th class="text-right p-3">代理佣金</th>
+              <th class="text-right p-3">净利润</th>
+            </tr>
+          </thead>
+          <tbody id="agent-tbody">
+            <tr><td colspan="8" class="p-8 text-center text-gray-400">请点击查询按钮加载数据</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- 日结算报表 -->
     <div id="report-daily" class="hidden bg-gray-800 rounded-xl overflow-hidden">
       <div class="p-4 border-b border-gray-700 flex flex-wrap gap-4 justify-between items-center">
@@ -6336,6 +6561,236 @@ async function renderReports(container) {
   }, 100);
 }
 
+// 加载全流水记录
+async function loadTransactions(page = 1) {
+  const startDate = document.getElementById('trans-start')?.value;
+  const endDate = document.getElementById('trans-end')?.value;
+  const type = document.getElementById('trans-type')?.value;
+  const tbody = document.getElementById('trans-tbody');
+  
+  tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>加载中...</td></tr>';
+  
+  const result = await api(`/api/reports/all-transactions?start_date=${startDate}&end_date=${endDate}&type=${type}&page=${page}`);
+  
+  if (result.success && result.data.length > 0) {
+    tbody.innerHTML = result.data.map(t => `
+      <tr class="border-t border-gray-700 hover:bg-gray-750">
+        <td class="p-3 font-mono text-xs">${escapeHtml(t.order_no)}</td>
+        <td class="p-3"><span class="px-2 py-1 rounded text-xs ${
+          t.transaction_type === 1 ? 'bg-green-600' :
+          t.transaction_type === 2 ? 'bg-red-600' :
+          t.transaction_type === 3 ? 'bg-orange-600' :
+          t.transaction_type === 4 ? 'bg-blue-600' :
+          t.transaction_type === 5 ? 'bg-purple-600' :
+          t.transaction_type === 6 ? 'bg-cyan-600' : 'bg-gray-600'
+        }">${escapeHtml(t.type_name)}</span></td>
+        <td class="p-3">${escapeHtml(t.player_name)}</td>
+        <td class="p-3 text-right font-mono">${formatCurrency(t.balance_before)}</td>
+        <td class="p-3 text-right font-mono font-bold ${t.amount >= 0 ? 'text-green-400' : 'text-red-400'}">${t.amount >= 0 ? '+' : ''}${formatCurrency(t.amount)}</td>
+        <td class="p-3 text-right font-mono">${formatCurrency(t.balance_after)}</td>
+        <td class="p-3 font-mono text-xs">${escapeHtml(t.related_order_id || '-')}</td>
+        <td class="p-3 text-sm text-gray-400">${formatDateTime(t.created_at)}</td>
+      </tr>
+    `).join('');
+  } else {
+    tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-gray-400">暂无数据</td></tr>';
+  }
+}
+
+// 加载综合报表
+async function loadComprehensive() {
+  const startDate = document.getElementById('comp-start')?.value;
+  const endDate = document.getElementById('comp-end')?.value;
+  const groupBy = document.getElementById('comp-group')?.value;
+  const tbody = document.getElementById('comp-tbody');
+  
+  tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>生成中...</td></tr>';
+  
+  const result = await api(`/api/reports/comprehensive?start_date=${startDate}&end_date=${endDate}&group_by=${groupBy}`);
+  
+  if (result.success && result.data.length > 0) {
+    tbody.innerHTML = result.data.map(d => `
+      <tr class="border-t border-gray-700 hover:bg-gray-750">
+        <td class="p-3 font-medium">${escapeHtml(d.dimension)}</td>
+        <td class="p-3 text-right">${formatCurrency(d.total_bet)}</td>
+        <td class="p-3 text-right ${d.total_win_loss >= 0 ? 'text-green-400' : 'text-red-400'}">${formatCurrency(d.total_win_loss)}</td>
+        <td class="p-3 text-right ${d.company_profit >= 0 ? 'text-green-400' : 'text-red-400'}">${formatCurrency(d.company_profit)}</td>
+        <td class="p-3 text-right text-yellow-400">${formatCurrency(d.agent_commission)}</td>
+        <td class="p-3 text-right font-bold ${d.net_profit >= 0 ? 'text-green-400' : 'text-red-400'}">${formatCurrency(d.net_profit)}</td>
+        <td class="p-3 text-right">${d.player_count || 0}</td>
+        <td class="p-3 text-right">${d.bet_count || 0}</td>
+      </tr>
+    `).join('');
+  } else {
+    tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-gray-400">暂无数据</td></tr>';
+  }
+}
+
+// 加载玩家排名
+async function loadRanking() {
+  const startDate = document.getElementById('rank-start')?.value;
+  const endDate = document.getElementById('rank-end')?.value;
+  
+  const [winners, losers] = await Promise.all([
+    api(`/api/reports/player-ranking?start_date=${startDate}&end_date=${endDate}&rank_type=winner&limit=10`),
+    api(`/api/reports/player-ranking?start_date=${startDate}&end_date=${endDate}&rank_type=loser&limit=10`)
+  ]);
+  
+  const winnersDiv = document.getElementById('rank-winners');
+  const losersDiv = document.getElementById('rank-losers');
+  
+  if (winners.success && winners.data.length > 0) {
+    winnersDiv.innerHTML = winners.data.map((p, idx) => `
+      <div class="bg-gray-700 p-4 rounded-lg flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-yellow-600 flex items-center justify-center font-bold">${idx + 1}</div>
+          <div>
+            <p class="font-medium">${escapeHtml(p.username)}</p>
+            <p class="text-xs text-gray-400">代理: ${escapeHtml(p.agent_username || '直属')}</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-lg font-bold text-green-400">${formatCurrency(p.win_loss)}</p>
+          <p class="text-xs text-gray-400">${p.bet_count} 注单</p>
+        </div>
+      </div>
+    `).join('');
+  } else {
+    winnersDiv.innerHTML = '<p class="text-center text-gray-400 py-4">暂无数据</p>';
+  }
+  
+  if (losers.success && losers.data.length > 0) {
+    losersDiv.innerHTML = losers.data.map((p, idx) => `
+      <div class="bg-gray-700 p-4 rounded-lg flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center font-bold">${idx + 1}</div>
+          <div>
+            <p class="font-medium">${escapeHtml(p.username)}</p>
+            <p class="text-xs text-gray-400">代理: ${escapeHtml(p.agent_username || '直属')}</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-lg font-bold text-red-400">${formatCurrency(p.win_loss)}</p>
+          <p class="text-xs text-gray-400">${p.bet_count} 注单</p>
+        </div>
+      </div>
+    `).join('');
+  } else {
+    losersDiv.innerHTML = '<p class="text-center text-gray-400 py-4">暂无数据</p>';
+  }
+}
+
+// 加载每日汇总
+async function loadDailySummary() {
+  const startDate = document.getElementById('summary-start')?.value;
+  const endDate = document.getElementById('summary-end')?.value;
+  const tbody = document.getElementById('summary-tbody');
+  
+  tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>加载中...</td></tr>';
+  
+  const result = await api(`/api/reports/daily-summary?start_date=${startDate}&end_date=${endDate}`);
+  
+  if (result.success) {
+    // 显示汇总卡片
+    const summary = result.summary || {};
+    document.getElementById('summary-cards').innerHTML = `
+      <div class="text-center p-4 bg-gray-700 rounded-lg">
+        <p class="text-xs text-gray-400 mb-1">总投注</p>
+        <p class="text-xl font-bold text-cyan-400">${formatCurrency(summary.total_bet)}</p>
+      </div>
+      <div class="text-center p-4 bg-gray-700 rounded-lg">
+        <p class="text-xs text-gray-400 mb-1">总派彩</p>
+        <p class="text-xl font-bold text-purple-400">${formatCurrency(summary.total_payout)}</p>
+      </div>
+      <div class="text-center p-4 bg-gray-700 rounded-lg">
+        <p class="text-xs text-gray-400 mb-1">公司盈亏</p>
+        <p class="text-xl font-bold ${summary.total_company_profit >= 0 ? 'text-green-400' : 'text-red-400'}">${formatCurrency(summary.total_company_profit)}</p>
+      </div>
+      <div class="text-center p-4 bg-gray-700 rounded-lg">
+        <p class="text-xs text-gray-400 mb-1">活跃玩家</p>
+        <p class="text-xl font-bold text-white">${summary.total_players || 0}</p>
+      </div>
+    `;
+    
+    if (result.data.length > 0) {
+      tbody.innerHTML = result.data.map(d => `
+        <tr class="border-t border-gray-700 hover:bg-gray-750">
+          <td class="p-3">${d.date}</td>
+          <td class="p-3 text-right">${d.active_players || 0}</td>
+          <td class="p-3 text-right">${d.bet_count || 0}</td>
+          <td class="p-3 text-right">${formatCurrency(d.total_bet)}</td>
+          <td class="p-3 text-right">${formatCurrency(d.total_payout)}</td>
+          <td class="p-3 text-right ${d.player_win_loss >= 0 ? 'text-green-400' : 'text-red-400'}">${formatCurrency(d.player_win_loss)}</td>
+          <td class="p-3 text-right font-bold ${d.company_profit >= 0 ? 'text-green-400' : 'text-red-400'}">${formatCurrency(d.company_profit)}</td>
+        </tr>
+      `).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-400">暂无数据</td></tr>';
+    }
+  }
+}
+
+// 加载游戏营收
+async function loadGameRevenue() {
+  const startDate = document.getElementById('game-start')?.value;
+  const endDate = document.getElementById('game-end')?.value;
+  const tbody = document.getElementById('game-tbody');
+  
+  tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>加载中...</td></tr>';
+  
+  const result = await api(`/api/reports/game-revenue?start_date=${startDate}&end_date=${endDate}`);
+  
+  if (result.success && result.data.length > 0) {
+    tbody.innerHTML = result.data.map(g => `
+      <tr class="border-t border-gray-700 hover:bg-gray-750">
+        <td class="p-3 font-medium">${escapeHtml(g.game_name)}</td>
+        <td class="p-3 text-right">${g.bet_count || 0}</td>
+        <td class="p-3 text-right">${g.player_count || 0}</td>
+        <td class="p-3 text-right">${formatCurrency(g.total_bet)}</td>
+        <td class="p-3 text-right">${formatCurrency(g.total_payout)}</td>
+        <td class="p-3 text-right font-bold ${g.game_revenue >= 0 ? 'text-green-400' : 'text-red-400'}">${formatCurrency(g.game_revenue)}</td>
+        <td class="p-3 text-right ${g.win_rate >= 0 ? 'text-green-400' : 'text-red-400'}">${g.win_rate}%</td>
+      </tr>
+    `).join('');
+  } else {
+    tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-400">暂无数据</td></tr>';
+  }
+}
+
+// 加载代理业绩
+async function loadAgentPerformance() {
+  const startDate = document.getElementById('agent-start')?.value;
+  const endDate = document.getElementById('agent-end')?.value;
+  const tbody = document.getElementById('agent-tbody');
+  
+  tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>加载中...</td></tr>';
+  
+  const result = await api(`/api/reports/agent-performance?start_date=${startDate}&end_date=${endDate}`);
+  
+  if (result.success && result.data.length > 0) {
+    tbody.innerHTML = result.data.map(a => `
+      <tr class="border-t border-gray-700 hover:bg-gray-750">
+        <td class="p-3">
+          <p class="font-medium">${escapeHtml(a.agent_username)}</p>
+          <p class="text-xs text-gray-400">${escapeHtml(a.nickname || '')}</p>
+        </td>
+        <td class="p-3"><span class="px-2 py-1 rounded text-xs ${
+          a.level === 'shareholder' ? 'bg-yellow-600' : 
+          a.level === 'general_agent' ? 'bg-blue-600' : 'bg-gray-600'
+        }">${a.level === 'shareholder' ? '股东' : a.level === 'general_agent' ? '总代' : '代理'}</span></td>
+        <td class="p-3 text-right">${a.downline_count || 0}</td>
+        <td class="p-3 text-right">${a.player_count || 0}</td>
+        <td class="p-3 text-right">${formatCurrency(a.total_bet)}</td>
+        <td class="p-3 text-right ${a.company_profit >= 0 ? 'text-green-400' : 'text-red-400'}">${formatCurrency(a.company_profit)}</td>
+        <td class="p-3 text-right text-yellow-400">${formatCurrency(a.agent_commission)}</td>
+        <td class="p-3 text-right font-bold ${a.net_profit >= 0 ? 'text-green-400' : 'text-red-400'}">${formatCurrency(a.net_profit)}</td>
+      </tr>
+    `).join('');
+  } else {
+    tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-gray-400">暂无数据</td></tr>';
+  }
+}
+
 function switchReportTab(tab) {
   document.querySelectorAll('[id^="report-"]').forEach(el => el.classList.add('hidden'));
   document.querySelectorAll('[id^="tab-"]').forEach(el => {
@@ -6352,6 +6807,12 @@ function switchReportTab(tab) {
   
   // 根据标签自动加载数据
   switch(tab) {
+    case 'transactions': loadTransactions(); break;
+    case 'comprehensive': loadComprehensive(); break;
+    case 'ranking': loadRanking(); break;
+    case 'daily-summary': loadDailySummary(); break;
+    case 'game-revenue': loadGameRevenue(); break;
+    case 'agent-perf': loadAgentPerformance(); break;
     case 'account': loadAccountDetails(); break;
     case 'settle': loadSettleReport(); break;
     case 'daily': loadDailyReport(); break;
