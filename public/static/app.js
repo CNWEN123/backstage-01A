@@ -2050,6 +2050,7 @@ async function renderFinance(container) {
       <button id="tab-withdraw" onclick="switchFinanceTab('withdraw')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600">提款审核 <span class="bg-red-500 text-xs px-2 py-0.5 rounded-full ml-1">${withdraws.length}</span></button>
       <button id="tab-deposit" onclick="switchFinanceTab('deposit')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600">存款审核 <span class="bg-yellow-500 text-xs px-2 py-0.5 rounded-full ml-1">${deposits.length}</span></button>
       <button id="tab-payment" onclick="switchFinanceTab('payment')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600">收款方式设置</button>
+      <button id="tab-finance-password" onclick="switchFinanceTab('finance-password')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600"><i class="fas fa-key mr-1"></i>财务密码设置</button>
     </div>
     
     <!-- 提款审核 -->
@@ -2412,7 +2413,216 @@ async function renderFinance(container) {
         </table>
       </div>
     </div>
+    
+    <!-- 财务密码设置 -->
+    <div id="finance-password" class="hidden">
+      <div class="bg-gradient-to-r from-red-600 to-orange-600 rounded-xl p-4 mb-6 flex items-center">
+        <i class="fas fa-shield-alt text-white text-3xl mr-4"></i>
+        <div>
+          <h3 class="font-bold text-white text-lg">财务密码安全设置</h3>
+          <p class="text-sm text-red-100 mt-1">用于保护资金操作安全，涉及人工存取款、红利派发等关键操作时需要输入</p>
+        </div>
+      </div>
+      
+      <!-- 密码配置卡片 -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <!-- 密码1 -->
+        <div class="bg-gray-800 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="font-semibold flex items-center">
+              <i class="fas fa-key text-blue-400 mr-2"></i>
+              财务密码 #1
+            </h4>
+            <span id="pwd1-status" class="px-2 py-1 rounded text-xs bg-gray-600">未设置</span>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <label class="text-gray-400 text-xs block mb-1.5">密码名称</label>
+              <input type="text" id="pwd1-name" placeholder="例如：主管密码" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+            </div>
+            <div>
+              <label class="text-gray-400 text-xs block mb-1.5">密码值</label>
+              <input type="password" id="pwd1-value" placeholder="6-20位数字或字母" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+            </div>
+            <button onclick="saveFinancePassword(1)" class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded font-medium transition-colors">
+              <i class="fas fa-save mr-2"></i>保存密码
+            </button>
+          </div>
+        </div>
+        
+        <!-- 密码2 -->
+        <div class="bg-gray-800 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="font-semibold flex items-center">
+              <i class="fas fa-key text-green-400 mr-2"></i>
+              财务密码 #2
+            </h4>
+            <span id="pwd2-status" class="px-2 py-1 rounded text-xs bg-gray-600">未设置</span>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <label class="text-gray-400 text-xs block mb-1.5">密码名称</label>
+              <input type="text" id="pwd2-name" placeholder="例如：经理密码" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+            </div>
+            <div>
+              <label class="text-gray-400 text-xs block mb-1.5">密码值</label>
+              <input type="password" id="pwd2-value" placeholder="6-20位数字或字母" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+            </div>
+            <button onclick="saveFinancePassword(2)" class="w-full bg-green-600 hover:bg-green-700 py-2 rounded font-medium transition-colors">
+              <i class="fas fa-save mr-2"></i>保存密码
+            </button>
+          </div>
+        </div>
+        
+        <!-- 密码3 -->
+        <div class="bg-gray-800 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="font-semibold flex items-center">
+              <i class="fas fa-key text-purple-400 mr-2"></i>
+              财务密码 #3
+            </h4>
+            <span id="pwd3-status" class="px-2 py-1 rounded text-xs bg-gray-600">未设置</span>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <label class="text-gray-400 text-xs block mb-1.5">密码名称</label>
+              <input type="text" id="pwd3-name" placeholder="例如：总监密码" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+            </div>
+            <div>
+              <label class="text-gray-400 text-xs block mb-1.5">密码值</label>
+              <input type="password" id="pwd3-value" placeholder="6-20位数字或字母" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-primary focus:outline-none">
+            </div>
+            <button onclick="saveFinancePassword(3)" class="w-full bg-purple-600 hover:bg-purple-700 py-2 rounded font-medium transition-colors">
+              <i class="fas fa-save mr-2"></i>保存密码
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 验证规则配置 -->
+      <div class="bg-gray-800 rounded-xl p-6">
+        <h4 class="font-semibold mb-4 flex items-center">
+          <i class="fas fa-cog text-primary mr-2"></i>
+          验证规则配置
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="text-gray-300 text-sm block mb-3 font-medium">所需密码数量</label>
+            <div class="space-y-2">
+              <label class="flex items-center cursor-pointer p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+                <input type="radio" name="pwd-required-count" value="1" checked class="mr-3">
+                <div class="flex-1">
+                  <p class="font-medium">需要 1 个密码</p>
+                  <p class="text-xs text-gray-400 mt-0.5">输入任意一个已设置的财务密码即可</p>
+                </div>
+              </label>
+              <label class="flex items-center cursor-pointer p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+                <input type="radio" name="pwd-required-count" value="2" class="mr-3">
+                <div class="flex-1">
+                  <p class="font-medium">需要 2 个密码</p>
+                  <p class="text-xs text-gray-400 mt-0.5">需要同时输入任意两个已设置的财务密码</p>
+                </div>
+              </label>
+              <label class="flex items-center cursor-pointer p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+                <input type="radio" name="pwd-required-count" value="3" class="mr-3">
+                <div class="flex-1">
+                  <p class="font-medium">需要 3 个密码</p>
+                  <p class="text-xs text-gray-400 mt-0.5">需要同时输入全部三个财务密码（最高安全级别）</p>
+                </div>
+              </label>
+            </div>
+          </div>
+          
+          <div>
+            <label class="text-gray-300 text-sm block mb-3 font-medium">应用场景</label>
+            <div class="bg-gray-700 rounded-lg p-4 space-y-2 text-sm">
+              <div class="flex items-center">
+                <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                <span>人工存款操作</span>
+              </div>
+              <div class="flex items-center">
+                <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                <span>人工取款操作</span>
+              </div>
+              <div class="flex items-center">
+                <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                <span>红利派发操作</span>
+              </div>
+              <div class="flex items-center">
+                <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                <span>提款审核通过</span>
+              </div>
+              <div class="flex items-center">
+                <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                <span>存款审核通过</span>
+              </div>
+              <div class="mt-4 pt-4 border-t border-gray-600">
+                <p class="text-xs text-gray-400">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  以上所有涉及资金变动的操作都需要财务密码验证
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-6 flex justify-end">
+          <button onclick="savePasswordRule()" class="bg-primary hover:bg-blue-700 px-6 py-2.5 rounded-lg font-medium transition-colors">
+            <i class="fas fa-save mr-2"></i>保存配置
+          </button>
+        </div>
+      </div>
+      
+      <!-- 密码状态说明 -->
+      <div class="bg-gray-800 rounded-xl p-6 mt-6">
+        <h4 class="font-semibold mb-4 flex items-center">
+          <i class="fas fa-info-circle text-blue-400 mr-2"></i>
+          使用说明
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-400">
+          <div>
+            <p class="mb-2"><strong class="text-gray-300">1. 密码设置：</strong></p>
+            <ul class="list-disc list-inside space-y-1 ml-2">
+              <li>可以设置 1-3 个财务密码</li>
+              <li>每个密码需要设置名称和密码值</li>
+              <li>密码长度为 6-20 位数字或字母</li>
+              <li>建议不同人员保管不同密码</li>
+            </ul>
+          </div>
+          <div>
+            <p class="mb-2"><strong class="text-gray-300">2. 验证规则：</strong></p>
+            <ul class="list-disc list-inside space-y-1 ml-2">
+              <li>选择需要几个密码才能验证通过</li>
+              <li>安全级别：1个（低）< 2个（中）< 3个（高）</li>
+              <li>验证规则适用于所有资金操作</li>
+              <li>可以随时修改验证规则</li>
+            </ul>
+          </div>
+          <div>
+            <p class="mb-2"><strong class="text-gray-300">3. 密码管理：</strong></p>
+            <ul class="list-disc list-inside space-y-1 ml-2">
+              <li>密码修改后立即生效</li>
+              <li>建议定期更换财务密码</li>
+              <li>妥善保管密码，防止泄露</li>
+              <li>遗忘密码请联系超级管理员重置</li>
+            </ul>
+          </div>
+          <div>
+            <p class="mb-2"><strong class="text-gray-300">4. 安全建议：</strong></p>
+            <ul class="list-disc list-inside space-y-1 ml-2">
+              <li>大额操作建议使用 3 个密码验证</li>
+              <li>不同密码由不同人员保管</li>
+              <li>避免在公共场合输入密码</li>
+              <li>发现密码泄露立即修改</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
   `;
+  
+  // 加载财务密码配置
+  loadFinancePasswordConfig();
 }
 
 // 支付方式图标和颜色
@@ -15030,4 +15240,248 @@ function validateEditAgentHierarchy() {
   }
   
   return true;
+}
+
+// ==========================================
+// 财务密码管理
+// ==========================================
+
+// 加载财务密码配置
+async function loadFinancePasswordConfig() {
+  try {
+    const result = await api('/api/finance-password/config');
+    if (result.success && result.data) {
+      const config = result.data;
+      
+      // 更新密码状态
+      for (let i = 1; i <= 3; i++) {
+        const pwd = config.passwords?.find(p => p.slot === i);
+        const statusEl = document.getElementById(`pwd${i}-status`);
+        const nameEl = document.getElementById(`pwd${i}-name`);
+        
+        if (pwd && pwd.is_set) {
+          statusEl.textContent = '已设置';
+          statusEl.className = 'px-2 py-1 rounded text-xs bg-green-600';
+          if (nameEl) nameEl.value = pwd.name || '';
+        } else {
+          statusEl.textContent = '未设置';
+          statusEl.className = 'px-2 py-1 rounded text-xs bg-gray-600';
+        }
+      }
+      
+      // 更新验证规则
+      if (config.required_count) {
+        const radio = document.querySelector(`input[name="pwd-required-count"][value="${config.required_count}"]`);
+        if (radio) radio.checked = true;
+      }
+    }
+  } catch (error) {
+    console.error('Load finance password config error:', error);
+  }
+}
+
+// 保存财务密码
+async function saveFinancePassword(slot) {
+  const nameEl = document.getElementById(`pwd${slot}-name`);
+  const valueEl = document.getElementById(`pwd${slot}-value`);
+  
+  const name = nameEl?.value?.trim();
+  const password = valueEl?.value?.trim();
+  
+  if (!name) {
+    showToast('请输入密码名称', 'warning');
+    nameEl?.focus();
+    return;
+  }
+  
+  if (!password) {
+    showToast('请输入密码值', 'warning');
+    valueEl?.focus();
+    return;
+  }
+  
+  if (password.length < 6 || password.length > 20) {
+    showToast('密码长度必须为 6-20 位', 'warning');
+    valueEl?.focus();
+    return;
+  }
+  
+  if (!/^[a-zA-Z0-9]+$/.test(password)) {
+    showToast('密码只能包含数字和字母', 'warning');
+    valueEl?.focus();
+    return;
+  }
+  
+  try {
+    const result = await api('/api/finance-password/set', {
+      method: 'POST',
+      body: JSON.stringify({ slot, name, password })
+    });
+    
+    if (result.success) {
+      showToast(`财务密码 #${slot} 设置成功`, 'success');
+      valueEl.value = ''; // 清空密码输入
+      loadFinancePasswordConfig(); // 重新加载配置
+    } else {
+      showToast(result.error || '设置失败', 'error');
+    }
+  } catch (error) {
+    console.error('Save finance password error:', error);
+    showToast('设置失败: ' + error.message, 'error');
+  }
+}
+
+// 保存密码验证规则
+async function savePasswordRule() {
+  const requiredCount = document.querySelector('input[name="pwd-required-count"]:checked')?.value;
+  
+  if (!requiredCount) {
+    showToast('请选择所需密码数量', 'warning');
+    return;
+  }
+  
+  try {
+    const result = await api('/api/finance-password/rule', {
+      method: 'POST',
+      body: JSON.stringify({ required_count: parseInt(requiredCount) })
+    });
+    
+    if (result.success) {
+      showToast('验证规则配置已保存', 'success');
+      loadFinancePasswordConfig();
+    } else {
+      showToast(result.error || '保存失败', 'error');
+    }
+  } catch (error) {
+    console.error('Save password rule error:', error);
+    showToast('保存失败: ' + error.message, 'error');
+  }
+}
+
+// 验证财务密码（用于资金操作）
+async function verifyFinancePassword(operation, amount) {
+  return new Promise((resolve, reject) => {
+    // 创建密码验证弹窗
+    const modal = document.createElement('div');
+    modal.id = 'finance-password-modal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[100]';
+    modal.onclick = (e) => { if (e.target === modal) reject(new Error('用户取消验证')); };
+    
+    // 获取需要的密码数量
+    api('/api/finance-password/config').then(result => {
+      const config = result.data || {};
+      const requiredCount = config.required_count || 1;
+      const passwords = config.passwords || [];
+      const activePasswords = passwords.filter(p => p.is_set);
+      
+      if (activePasswords.length === 0) {
+        showToast('请先设置财务密码', 'warning');
+        reject(new Error('未设置财务密码'));
+        return;
+      }
+      
+      if (activePasswords.length < requiredCount) {
+        showToast(`需要设置至少 ${requiredCount} 个财务密码`, 'warning');
+        reject(new Error('财务密码数量不足'));
+        return;
+      }
+      
+      let passwordInputsHTML = '';
+      for (let i = 1; i <= requiredCount; i++) {
+        const pwd = passwords.find(p => p.slot === i) || { slot: i, name: `密码 #${i}` };
+        passwordInputsHTML += `
+          <div class="mb-4">
+            <label class="block text-gray-300 text-sm mb-2">
+              <i class="fas fa-key text-blue-400 mr-2"></i>${escapeHtml(pwd.name)}
+            </label>
+            <input type="password" id="pwd-input-${i}" placeholder="请输入${escapeHtml(pwd.name)}" 
+              class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2.5 focus:border-primary focus:outline-none"
+              required>
+          </div>
+        `;
+      }
+      
+      modal.innerHTML = `
+        <div class="bg-gray-800 rounded-xl max-w-md w-full mx-4 p-6" onclick="event.stopPropagation()">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold flex items-center">
+              <i class="fas fa-shield-alt text-red-400 mr-2"></i>
+              财务密码验证
+            </h3>
+            <button onclick="document.getElementById('finance-password-modal').remove()" class="text-gray-400 hover:text-white">
+              <i class="fas fa-times text-xl"></i>
+            </button>
+          </div>
+          
+          <div class="bg-gray-700 rounded-lg p-4 mb-6">
+            <div class="flex items-start">
+              <i class="fas fa-info-circle text-blue-400 mt-0.5 mr-3"></i>
+              <div class="text-sm">
+                <p class="text-gray-300 font-medium mb-1">操作类型：<span class="text-primary">${operation}</span></p>
+                ${amount ? `<p class="text-gray-300 font-medium">操作金额：<span class="text-green-400">${formatCurrency(amount)}</span></p>` : ''}
+                <p class="text-gray-400 mt-2">需要输入 <span class="text-red-400 font-bold">${requiredCount}</span> 个财务密码进行验证</p>
+              </div>
+            </div>
+          </div>
+          
+          <form id="verify-password-form">
+            ${passwordInputsHTML}
+            
+            <div class="flex gap-3 mt-6">
+              <button type="button" onclick="document.getElementById('finance-password-modal').remove()" 
+                class="flex-1 bg-gray-600 hover:bg-gray-500 py-2.5 rounded-lg font-medium">
+                取消
+              </button>
+              <button type="submit" class="flex-1 bg-primary hover:bg-blue-700 py-2.5 rounded-lg font-medium">
+                <i class="fas fa-check mr-2"></i>验证
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      // 聚焦第一个密码输入框
+      setTimeout(() => document.getElementById('pwd-input-1')?.focus(), 100);
+      
+      // 绑定表单提交
+      document.getElementById('verify-password-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const passwords = [];
+        for (let i = 1; i <= requiredCount; i++) {
+          const input = document.getElementById(`pwd-input-${i}`);
+          if (!input?.value) {
+            showToast(`请输入${activePasswords[i-1]?.name || '密码 #' + i}`, 'warning');
+            input?.focus();
+            return;
+          }
+          passwords.push({ slot: i, password: input.value });
+        }
+        
+        try {
+          const result = await api('/api/finance-password/verify', {
+            method: 'POST',
+            body: JSON.stringify({ passwords, operation, amount })
+          });
+          
+          if (result.success) {
+            showToast('密码验证成功', 'success');
+            modal.remove();
+            resolve(result.data);
+          } else {
+            showToast(result.error || '密码验证失败', 'error');
+          }
+        } catch (error) {
+          console.error('Verify password error:', error);
+          showToast('验证失败: ' + error.message, 'error');
+        }
+      });
+    }).catch(error => {
+      console.error('Load password config error:', error);
+      showToast('加载密码配置失败', 'error');
+      reject(error);
+    });
+  });
 }
