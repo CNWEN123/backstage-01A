@@ -7590,34 +7590,34 @@ async function renderReports(container) {
       </div>
       
       <!-- 统计卡片 -->
-      <div id="agent-summary" class="grid grid-cols-2 md:grid-cols-7 gap-4 p-4 border-b border-gray-700 bg-gray-750">
-        <div class="text-center">
-          <p class="text-gray-400 text-xs">代理总数</p>
-          <p class="text-lg font-bold text-primary" id="agent-total-count">-</p>
+      <div id="agent-summary" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 p-4 border-b border-gray-700">
+        <div class="bg-gray-750 rounded-lg p-3 text-center">
+          <p class="text-gray-400 text-xs mb-1">代理总数</p>
+          <p class="text-xl font-bold text-primary" id="agent-total-count">-</p>
         </div>
-        <div class="text-center">
-          <p class="text-gray-400 text-xs">玩家总数</p>
-          <p class="text-lg font-bold text-blue-400" id="agent-total-players">-</p>
+        <div class="bg-gray-750 rounded-lg p-3 text-center">
+          <p class="text-gray-400 text-xs mb-1">玩家总数</p>
+          <p class="text-xl font-bold text-blue-400" id="agent-total-players">-</p>
         </div>
-        <div class="text-center">
-          <p class="text-gray-400 text-xs">总投注额</p>
-          <p class="text-lg font-bold text-cyan-400" id="agent-total-bet">-</p>
+        <div class="bg-gray-750 rounded-lg p-3 text-center">
+          <p class="text-gray-400 text-xs mb-1">总投注额</p>
+          <p class="text-xl font-bold text-cyan-400" id="agent-total-bet">-</p>
         </div>
-        <div class="text-center">
-          <p class="text-gray-400 text-xs">输赢金额</p>
-          <p class="text-lg font-bold" id="agent-total-profit">-</p>
+        <div class="bg-gray-750 rounded-lg p-3 text-center">
+          <p class="text-gray-400 text-xs mb-1">输赢金额</p>
+          <p class="text-xl font-bold" id="agent-total-profit">-</p>
         </div>
-        <div class="text-center">
-          <p class="text-gray-400 text-xs">洗码费</p>
-          <p class="text-lg font-bold text-yellow-400" id="agent-total-commission">-</p>
+        <div class="bg-gray-750 rounded-lg p-3 text-center">
+          <p class="text-gray-400 text-xs mb-1">洗码费</p>
+          <p class="text-xl font-bold text-yellow-400" id="agent-total-commission">-</p>
         </div>
-        <div class="text-center">
-          <p class="text-gray-400 text-xs">代理占成收</p>
-          <p class="text-lg font-bold text-orange-400" id="agent-total-share">-</p>
+        <div class="bg-gray-750 rounded-lg p-3 text-center">
+          <p class="text-gray-400 text-xs mb-1">代理占成收</p>
+          <p class="text-xl font-bold text-orange-400" id="agent-total-share">-</p>
         </div>
-        <div class="text-center">
-          <p class="text-gray-400 text-xs">公司盈利</p>
-          <p class="text-lg font-bold text-green-400" id="agent-net-profit">-</p>
+        <div class="bg-gray-750 rounded-lg p-3 text-center">
+          <p class="text-gray-400 text-xs mb-1">公司盈利</p>
+          <p class="text-xl font-bold text-green-400" id="agent-net-profit">-</p>
         </div>
       </div>
       <div class="overflow-x-auto">
