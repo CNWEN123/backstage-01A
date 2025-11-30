@@ -7564,6 +7564,85 @@ app.get('/api/agent/invite-stats', async (c) => {
   }
 })
 
+// 股东/代理后台 - 下级代理列表 API
+app.get('/api/agent/subordinates', async (c) => {
+  const db = c.env.DB
+  const agentId = getAgentIdFromToken(c)
+  
+  if (!agentId) {
+    return c.json({ success: false, error: '未登录' }, 401)
+  }
+  
+  const page = parseInt(c.req.query('page') || '1')
+  const pageSize = 20
+  const offset = (page - 1) * pageSize
+  
+  const search = c.req.query('search') || ''
+  const level = c.req.query('level') || ''
+  const status = c.req.query('status') || ''
+  
+  try {
+    let whereConditions = ['parent_agent_id = ?']
+    let params: any[] = [agentId]
+    
+    if (search) {
+      whereConditions.push('(agent_username LIKE ? OR nickname LIKE ? OR contact_phone LIKE ?)')
+      const searchPattern = `%${search}%`
+      params.push(searchPattern, searchPattern, searchPattern)
+    }
+    
+    if (level) {
+      whereConditions.push('level = ?')
+      params.push(level)
+    }
+    
+    if (status !== '') {
+      whereConditions.push('status = ?')
+      params.push(status)
+    }
+    
+    const whereClause = whereConditions.join(' AND ')
+    
+    // 查询总数
+    const countResult = await db.prepare(`
+      SELECT COUNT(*) as total FROM agents WHERE ${whereClause}
+    `).bind(...params).first() as any
+    
+    // 查询列表
+    const list = await db.prepare(`
+      SELECT 
+        a.id, 
+        a.agent_username as username, 
+        a.nickname as real_name, 
+        a.contact_phone as phone, 
+        a.level, 
+        a.status, 
+        a.created_at,
+        (SELECT COUNT(*) FROM agents WHERE parent_agent_id = a.id) as subordinate_count,
+        0 as player_count,
+        0 as month_performance
+      FROM agents a
+      WHERE ${whereClause}
+      ORDER BY a.created_at DESC
+      LIMIT ? OFFSET ?
+    `).bind(...params, pageSize, offset).all()
+    
+    return c.json({
+      success: true,
+      data: {
+        list: list.results,
+        pagination: {
+          current: page,
+          pageSize,
+          total: countResult.total
+        }
+      }
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
 // ========================================
 // 前端页面
 // ========================================
