@@ -825,10 +825,10 @@ async function renderAgents(container) {
   const renderTree = (nodes, level = 0) => {
     return nodes.map(n => `
       <div class="ml-${level * 4} mb-2">
-        <div class="flex items-center p-3 bg-gray-700 rounded-lg hover:bg-gray-600">
+        <div class="flex items-center p-3 bg-gray-700 rounded-lg hover:bg-gray-600 cursor-pointer" onclick="viewAgentDetail(${n.id})">
           <i class="fas fa-${n.level === 'shareholder' ? 'crown text-yellow-400' : n.level === 'general_agent' ? 'user-tie text-blue-400' : 'user text-gray-400'} mr-3"></i>
           <div class="flex-1">
-            <span class="font-medium">${n.username}</span>
+            ${agentLink(n.id, n.username)}
             <span class="text-sm text-gray-400 ml-2">${n.nickname || ''}</span>
           </div>
           <span class="text-sm text-gray-400 mr-4">玩家: ${n.player_count}</span>
@@ -872,7 +872,7 @@ async function renderAgents(container) {
             ${agents.map(a => `
               <tr class="border-t border-gray-700">
                 <td class="p-3">
-                  <p class="font-medium">${escapeHtml(a.agent_username)}</p>
+                  ${agentLink(a.id, a.agent_username)}
                   <p class="text-sm text-gray-400">${escapeHtml(a.nickname || '')}</p>
                 </td>
                 <td class="p-3">
