@@ -7317,10 +7317,10 @@ async function renderReports(container) {
             <tr>
               <th class="text-left p-3">维度</th>
               <th class="text-right p-3">总投注</th>
-              <th class="text-right p-3">总输赢</th>
-              <th class="text-right p-3">公司盈亏</th>
-              <th class="text-right p-3">代理洗码费</th>
-              <th class="text-right p-3">净利润</th>
+              <th class="text-right p-3">输赢金额</th>
+              <th class="text-right p-3">洗码费</th>
+              <th class="text-right p-3">占成收</th>
+              <th class="text-right p-3">公司盈利</th>
               <th class="text-right p-3">玩家数</th>
               <th class="text-right p-3">注单数</th>
             </tr>
@@ -7603,15 +7603,19 @@ async function renderReports(container) {
           <p class="text-lg font-bold text-cyan-400" id="agent-total-bet">-</p>
         </div>
         <div class="text-center">
-          <p class="text-gray-400 text-xs">公司盈亏</p>
+          <p class="text-gray-400 text-xs">输赢金额</p>
           <p class="text-lg font-bold" id="agent-total-profit">-</p>
         </div>
         <div class="text-center">
-          <p class="text-gray-400 text-xs">代理洗码费</p>
+          <p class="text-gray-400 text-xs">洗码费</p>
           <p class="text-lg font-bold text-yellow-400" id="agent-total-commission">-</p>
         </div>
         <div class="text-center">
-          <p class="text-gray-400 text-xs">净利润</p>
+          <p class="text-gray-400 text-xs">代理占成收</p>
+          <p class="text-lg font-bold text-orange-400" id="agent-total-share">-</p>
+        </div>
+        <div class="text-center">
+          <p class="text-gray-400 text-xs">公司盈利</p>
           <p class="text-lg font-bold text-green-400" id="agent-net-profit">-</p>
         </div>
       </div>
@@ -7624,9 +7628,10 @@ async function renderReports(container) {
               <th class="text-right p-3">下线数</th>
               <th class="text-right p-3">玩家数</th>
               <th class="text-right p-3">总投注</th>
-              <th class="text-right p-3">公司盈亏</th>
-              <th class="text-right p-3">代理洗码费</th>
-              <th class="text-right p-3">净利润</th>
+              <th class="text-right p-3">输赢金额</th>
+              <th class="text-right p-3">洗码费</th>
+              <th class="text-right p-3">占成收</th>
+              <th class="text-right p-3">公司盈利</th>
             </tr>
           </thead>
           <tbody id="agent-tbody">
@@ -7669,7 +7674,7 @@ async function renderReports(container) {
           <p class="text-lg font-bold text-purple-400" id="daily-payout">-</p>
         </div>
         <div class="text-center">
-          <p class="text-gray-400 text-xs">公司盈亏</p>
+          <p class="text-gray-400 text-xs">输赢金额</p>
           <p class="text-lg font-bold" id="daily-profit">-</p>
         </div>
         <div class="text-center">
@@ -7735,7 +7740,7 @@ async function renderReports(container) {
             <p class="text-2xl font-bold text-cyan-400" id="profit-total-bet">-</p>
           </div>
           <div class="bg-gray-700 rounded-lg p-4 text-center">
-            <p class="text-gray-400 text-xs mb-1">毛利润</p>
+            <p class="text-gray-400 text-xs mb-1">输赢金额</p>
             <p class="text-2xl font-bold" id="profit-gross">-</p>
           </div>
           <div class="bg-gray-700 rounded-lg p-4 text-center">
@@ -7743,11 +7748,11 @@ async function renderReports(container) {
             <p class="text-2xl font-bold text-yellow-400" id="profit-commission">-</p>
           </div>
           <div class="bg-gray-700 rounded-lg p-4 text-center">
-            <p class="text-gray-400 text-xs mb-1">代理占成</p>
+            <p class="text-gray-400 text-xs mb-1">代理占成收</p>
             <p class="text-2xl font-bold text-orange-400" id="profit-agent-share">-</p>
           </div>
           <div class="bg-gray-700 rounded-lg p-4 text-center">
-            <p class="text-gray-400 text-xs mb-1">公司净利润</p>
+            <p class="text-gray-400 text-xs mb-1">公司盈利</p>
             <p class="text-2xl font-bold" id="profit-company-net">-</p>
           </div>
         </div>
@@ -7766,10 +7771,10 @@ async function renderReports(container) {
                   <th class="text-right p-3 text-xs">下级会员</th>
                   <th class="text-right p-3 text-xs">总投注</th>
                   <th class="text-right p-3 text-xs">有效投注</th>
-                  <th class="text-right p-3 text-xs">毛利润</th>
+                  <th class="text-right p-3 text-xs">输赢金额</th>
                   <th class="text-right p-3 text-xs">洗码费</th>
-                  <th class="text-right p-3 text-xs">代理应得</th>
-                  <th class="text-right p-3 text-xs">公司留存</th>
+                  <th class="text-right p-3 text-xs">占成收(代理应得)</th>
+                  <th class="text-right p-3 text-xs">公司盈利</th>
                 </tr>
               </thead>
               <tbody id="profit-agents-tbody">
@@ -8062,7 +8067,7 @@ async function renderReports(container) {
           <p class="text-lg font-bold text-purple-400" id="settle-stat-total-payout">-</p>
         </div>
         <div class="text-center">
-          <p class="text-gray-400 text-xs">公司盈亏</p>
+          <p class="text-gray-400 text-xs">输赢金额</p>
           <p class="text-lg font-bold" id="settle-stat-company-profit">-</p>
         </div>
         <div class="text-center">
