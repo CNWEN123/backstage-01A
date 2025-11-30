@@ -124,7 +124,7 @@ function initMainPage() {
 function renderSidebar() {
   const shareholderMenu = [
     { id: 'dashboard', icon: 'fa-chart-line', name: '数据概览' },
-    { id: 'subordinates', icon: 'fa-users', name: '下级代理管理' },
+    { id: 'team-manage', icon: 'fa-users', name: '团队管理' },
     { id: 'team-report', icon: 'fa-chart-bar', name: '团队报表' },
     { id: 'commission', icon: 'fa-percentage', name: '佣金明细' },
     { id: 'account', icon: 'fa-user-cog', name: '账户设置' }
@@ -132,8 +132,7 @@ function renderSidebar() {
 
   const agentMenu = [
     { id: 'dashboard', icon: 'fa-chart-line', name: '数据概览' },
-    { id: 'subordinates', icon: 'fa-users', name: '下级代理' },
-    { id: 'players', icon: 'fa-user-friends', name: '玩家管理' },
+    { id: 'team-manage', icon: 'fa-users', name: '团队管理' },
     { id: 'team-report', icon: 'fa-chart-bar', name: '团队报表' },
     { id: 'commission', icon: 'fa-percentage', name: '佣金明细' },
     { id: 'account', icon: 'fa-user-cog', name: '账户设置' }
@@ -166,6 +165,9 @@ function showModule(moduleId) {
   switch(moduleId) {
     case 'dashboard':
       renderDashboard();
+      break;
+    case 'team-manage':
+      renderTeamManage();
       break;
     case 'subordinates':
       renderSubordinates();
@@ -347,6 +349,398 @@ function renderTeamChart(data) {
       }
     }
   });
+}
+
+// ========================================
+// 团队管理功能（合并代理和玩家）
+// ========================================
+
+// 渲染团队管理（主函数）
+async function renderTeamManage() {
+  const content = document.getElementById('main-content');
+  
+  content.innerHTML = `
+    <div class="fade-in">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold">
+          <i class="fas fa-users text-primary mr-3"></i>团队管理
+        </h2>
+        <div class="flex items-center space-x-3">
+          <button onclick="showAddAgentModal()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded-lg transition">
+            <i class="fas fa-user-plus mr-2"></i>新增代理
+          </button>
+          <button onclick="showAddPlayerModal()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition">
+            <i class="fas fa-user-plus mr-2"></i>新增会员
+          </button>
+        </div>
+      </div>
+      
+      <!-- 选项卡 -->
+      <div class="bg-gray-800 rounded-xl border border-gray-700 mb-6">
+        <div class="flex border-b border-gray-700">
+          <button onclick="switchTeamTab('agents')" data-team-tab="agents" class="team-tab-btn flex-1 px-6 py-4 text-center transition hover:bg-gray-750 border-b-2 border-primary">
+            <i class="fas fa-sitemap mr-2"></i>下级代理
+          </button>
+          <button onclick="switchTeamTab('players')" data-team-tab="players" class="team-tab-btn flex-1 px-6 py-4 text-center transition hover:bg-gray-750 border-b-2 border-transparent">
+            <i class="fas fa-user-friends mr-2"></i>玩家会员
+          </button>
+        </div>
+      </div>
+      
+      <!-- 内容区域 -->
+      <div id="team-tab-content">
+        <!-- 动态渲染 -->
+      </div>
+    </div>
+  `;
+  
+  switchTeamTab('agents');
+}
+
+// 切换团队管理选项卡
+function switchTeamTab(tab) {
+  // 更新选项卡样式
+  document.querySelectorAll('.team-tab-btn').forEach(btn => {
+    btn.classList.remove('border-primary');
+    btn.classList.add('border-transparent');
+  });
+  document.querySelector(`[data-team-tab="${tab}"]`).classList.remove('border-transparent');
+  document.querySelector(`[data-team-tab="${tab}"]`).classList.add('border-primary');
+  
+  const content = document.getElementById('team-tab-content');
+  
+  if (tab === 'agents') {
+    renderAgentsTab();
+  } else {
+    renderPlayersTab();
+  }
+}
+
+// 渲染代理选项卡
+async function renderAgentsTab() {
+  const content = document.getElementById('team-tab-content');
+  
+  content.innerHTML = `
+    <!-- 搜索和筛选栏 -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-6 border border-gray-700">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">搜索</label>
+          <input type="text" id="search-agent" placeholder="账号/姓名/手机号"
+                 class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-primary">
+        </div>
+        
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">层级</label>
+          <select id="filter-agent-level" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-primary">
+            <option value="">全部层级</option>
+            <option value="1">一级代理</option>
+            <option value="2">二级代理</option>
+            <option value="3">三级代理</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">状态</label>
+          <select id="filter-agent-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-primary">
+            <option value="">全部状态</option>
+            <option value="1">正常</option>
+            <option value="0">停用</option>
+          </select>
+        </div>
+        
+        <div class="flex items-end">
+          <button onclick="searchAgents()" class="w-full bg-primary hover:bg-blue-700 px-4 py-2 rounded-lg transition">
+            <i class="fas fa-search mr-2"></i>查询
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 数据表格 -->
+    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-gray-700">
+          <tr>
+            <th class="px-6 py-4 text-left text-sm font-semibold">账号</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold">姓名</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold">层级</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold">下级人数</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold">玩家人数</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold">本月业绩</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold">状态</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold">操作</th>
+          </tr>
+        </thead>
+        <tbody id="agents-table-body">
+          <tr>
+            <td colspan="8" class="px-6 py-12 text-center text-gray-400">
+              <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+              <div>加载中...</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- 分页 -->
+    <div id="agents-pagination" class="mt-6 flex items-center justify-between">
+      <!-- 动态渲染 -->
+    </div>
+  `;
+  
+  loadAgents();
+}
+
+// 渲染玩家选项卡
+async function renderPlayersTab() {
+  const content = document.getElementById('team-tab-content');
+  
+  content.innerHTML = `
+    <!-- 搜索和筛选栏 -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-6 border border-gray-700">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">搜索</label>
+          <input type="text" id="search-player" placeholder="账号/姓名/手机号"
+                 class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-primary">
+        </div>
+        
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">VIP等级</label>
+          <select id="filter-player-vip" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-primary">
+            <option value="">全部等级</option>
+            <option value="1">VIP1</option>
+            <option value="2">VIP2</option>
+            <option value="3">VIP3</option>
+            <option value="4">VIP4</option>
+            <option value="5">VIP5</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">状态</label>
+          <select id="filter-player-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-primary">
+            <option value="">全部状态</option>
+            <option value="active">活跃</option>
+            <option value="inactive">不活跃</option>
+            <option value="frozen">冻结</option>
+          </select>
+        </div>
+        
+        <div class="flex items-end">
+          <button onclick="searchPlayers()" class="w-full bg-primary hover:bg-blue-700 px-4 py-2 rounded-lg transition">
+            <i class="fas fa-search mr-2"></i>查询
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 数据表格 -->
+    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-gray-700">
+          <tr>
+            <th class="px-6 py-4 text-left text-sm font-semibold">账号</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold">姓名</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold">VIP等级</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold">余额</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold">本月投注</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold">本月输赢</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold">状态</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold">操作</th>
+          </tr>
+        </thead>
+        <tbody id="players-table-body">
+          <tr>
+            <td colspan="8" class="px-6 py-12 text-center text-gray-400">
+              <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+              <div>加载中...</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- 分页 -->
+    <div id="players-pagination" class="mt-6 flex items-center justify-between">
+      <!-- 动态渲染 -->
+    </div>
+  `;
+  
+  loadPlayers();
+}
+
+// 加载代理列表
+async function loadAgents(page = 1) {
+  try {
+    const search = document.getElementById('search-agent')?.value || '';
+    const level = document.getElementById('filter-agent-level')?.value || '';
+    const status = document.getElementById('filter-agent-status')?.value || '';
+    
+    const result = await api(`/api/agent/subordinates?page=${page}&search=${search}&level=${level}&status=${status}`);
+    
+    if (result.success) {
+      const tbody = document.getElementById('agents-table-body');
+      const data = result.data;
+      
+      if (data.list.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="px-6 py-12 text-center text-gray-400">
+              <i class="fas fa-inbox text-4xl mb-2"></i>
+              <div>暂无数据</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      tbody.innerHTML = data.list.map(item => `
+        <tr class="border-t border-gray-700 hover:bg-gray-750">
+          <td class="px-6 py-4">
+            <div class="font-medium">${escapeHtml(item.username)}</div>
+            <div class="text-sm text-gray-400">${escapeHtml(item.phone || '-')}</div>
+          </td>
+          <td class="px-6 py-4">${escapeHtml(item.real_name || '-')}</td>
+          <td class="px-6 py-4">
+            <span class="px-2 py-1 bg-blue-900 text-blue-300 rounded text-sm">
+              ${item.level}级代理
+            </span>
+          </td>
+          <td class="px-6 py-4">
+            <span class="text-blue-400 font-semibold">${item.subordinate_count}</span> 人
+          </td>
+          <td class="px-6 py-4">
+            <span class="text-green-400 font-semibold">${item.player_count}</span> 人
+          </td>
+          <td class="px-6 py-4">
+            <div class="font-semibold text-green-400">¥${formatMoney(item.month_performance)}</div>
+          </td>
+          <td class="px-6 py-4">
+            ${item.status === 1 
+              ? '<span class="px-2 py-1 bg-green-900 text-green-300 rounded text-sm">正常</span>'
+              : '<span class="px-2 py-1 bg-red-900 text-red-300 rounded text-sm">停用</span>'}
+          </td>
+          <td class="px-6 py-4">
+            <div class="flex items-center space-x-2">
+              <button onclick="viewAgentDetail(${item.id})" class="text-blue-400 hover:text-blue-300" title="查看详情">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button onclick="editAgent(${item.id})" class="text-green-400 hover:text-green-300" title="编辑">
+                <i class="fas fa-edit"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+  } catch (error) {
+    console.error('Load agents error:', error);
+    showToast('加载代理列表失败', 'error');
+  }
+}
+
+// 加载玩家列表
+async function loadPlayers(page = 1) {
+  try {
+    const search = document.getElementById('search-player')?.value || '';
+    const vip = document.getElementById('filter-player-vip')?.value || '';
+    const status = document.getElementById('filter-player-status')?.value || '';
+    
+    const result = await api(`/api/agent/players?page=${page}&search=${search}&vip=${vip}&status=${status}`);
+    
+    if (result.success) {
+      const tbody = document.getElementById('players-table-body');
+      const data = result.data;
+      
+      if (data.list.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="px-6 py-12 text-center text-gray-400">
+              <i class="fas fa-inbox text-4xl mb-2"></i>
+              <div>暂无数据</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      tbody.innerHTML = data.list.map(item => `
+        <tr class="border-t border-gray-700 hover:bg-gray-750">
+          <td class="px-6 py-4">
+            <div class="font-medium">${escapeHtml(item.username)}</div>
+            <div class="text-sm text-gray-400">${escapeHtml(item.phone || '-')}</div>
+          </td>
+          <td class="px-6 py-4">${escapeHtml(item.real_name || '-')}</td>
+          <td class="px-6 py-4">
+            <span class="px-2 py-1 bg-yellow-900 text-yellow-300 rounded text-sm">
+              VIP${item.vip_level || 0}
+            </span>
+          </td>
+          <td class="px-6 py-4">
+            <div class="font-semibold text-blue-400">¥${formatMoney(item.balance)}</div>
+          </td>
+          <td class="px-6 py-4 text-gray-300">¥${formatMoney(item.month_bet)}</td>
+          <td class="px-6 py-4">
+            <span class="${item.month_profit >= 0 ? 'text-green-400' : 'text-red-400'} font-semibold">
+              ¥${formatMoney(Math.abs(item.month_profit))}
+            </span>
+          </td>
+          <td class="px-6 py-4">
+            ${item.status === 'active' 
+              ? '<span class="px-2 py-1 bg-green-900 text-green-300 rounded text-sm">活跃</span>'
+              : item.status === 'frozen'
+              ? '<span class="px-2 py-1 bg-red-900 text-red-300 rounded text-sm">冻结</span>'
+              : '<span class="px-2 py-1 bg-gray-700 text-gray-300 rounded text-sm">不活跃</span>'}
+          </td>
+          <td class="px-6 py-4">
+            <div class="flex items-center space-x-2">
+              <button onclick="viewPlayerDetail(${item.id})" class="text-blue-400 hover:text-blue-300" title="查看详情">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button onclick="editPlayer(${item.id})" class="text-green-400 hover:text-green-300" title="编辑">
+                <i class="fas fa-edit"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+  } catch (error) {
+    console.error('Load players error:', error);
+    showToast('加载玩家列表失败', 'error');
+  }
+}
+
+// 搜索代理
+function searchAgents() {
+  loadAgents(1);
+}
+
+// 搜索玩家
+function searchPlayers() {
+  loadPlayers(1);
+}
+
+// 查看代理详情
+function viewAgentDetail(id) {
+  showToast('查看代理详情功能开发中...', 'info');
+}
+
+// 编辑代理
+function editAgent(id) {
+  showToast('编辑代理功能开发中...', 'info');
+}
+
+// 查看玩家详情
+function viewPlayerDetail(id) {
+  showToast('查看玩家详情功能开发中...', 'info');
+}
+
+// 编辑玩家
+function editPlayer(id) {
+  showToast('编辑玩家功能开发中...', 'info');
 }
 
 // 渲染下级代理管理
@@ -689,26 +1083,10 @@ function renderTeamReport() {
   const content = document.getElementById('main-content');
   content.innerHTML = `
     <div class="fade-in">
-      <h2 class="text-2xl font-bold mb-6">
-        <i class="fas fa-chart-bar text-primary mr-3"></i>团队报表
-      </h2>
-      
-      <!-- 操作按钮区 -->
-      <div class="mb-6 flex items-center justify-between">
-        <div class="flex items-center space-x-4">
-          ${currentRole === 'shareholder' ? `
-            <button onclick="showAddAgentModal()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded-lg transition">
-              <i class="fas fa-user-plus mr-2"></i>新增下级代理
-            </button>
-          ` : `
-            <button onclick="showAddAgentModal()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded-lg transition">
-              <i class="fas fa-user-plus mr-2"></i>新增下级代理
-            </button>
-            <button onclick="showAddPlayerModal()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition">
-              <i class="fas fa-user-plus mr-2"></i>新增会员
-            </button>
-          `}
-        </div>
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold">
+          <i class="fas fa-chart-bar text-primary mr-3"></i>团队报表
+        </h2>
         <button onclick="exportTeamReport()" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition">
           <i class="fas fa-download mr-2"></i>导出报表
         </button>

@@ -7394,6 +7394,65 @@ app.get('/api/agent/login-logs', async (c) => {
   }
 })
 
+// 获取玩家列表
+app.get('/api/agent/players', async (c) => {
+  const db = c.env.DB
+  const page = parseInt(c.req.query('page') || '1')
+  const pageSize = 20
+  
+  const search = c.req.query('search') || ''
+  const vip = c.req.query('vip') || ''
+  const status = c.req.query('status') || ''
+  
+  try {
+    // 模拟数据
+    const mockData = {
+      list: [
+        {
+          id: 1,
+          username: 'player001',
+          real_name: '玩家张三',
+          phone: '13800138001',
+          vip_level: 3,
+          balance: 15800,
+          month_bet: 125000,
+          month_profit: -8500,
+          status: 'active'
+        },
+        {
+          id: 2,
+          username: 'player002',
+          real_name: '玩家李四',
+          phone: '13800138002',
+          vip_level: 2,
+          balance: 8200,
+          month_bet: 68000,
+          month_profit: 3200,
+          status: 'active'
+        },
+        {
+          id: 3,
+          username: 'player003',
+          real_name: '玩家王五',
+          phone: '13800138003',
+          vip_level: 1,
+          balance: 500,
+          month_bet: 12000,
+          month_profit: -500,
+          status: 'inactive'
+        }
+      ],
+      total: 83,
+      currentPage: page,
+      totalPages: 5
+    }
+    
+    return c.json({ success: true, data: mockData })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
 // ========================================
 // 前端页面
 // ========================================
