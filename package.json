@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "vite",
     "dev:sandbox": "wrangler pages dev dist --d1=live_dealer_db --local --ip 0.0.0.0 --port 3000",
-    "build": "vite build",
+    "build": "vite build && node scripts/fix-routes.cjs",
     "preview": "wrangler pages dev",
     "deploy": "npm run build && wrangler pages deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
