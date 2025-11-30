@@ -6168,27 +6168,28 @@ async function renderReports(container) {
     
     <!-- 1. 注单明细 -->
     <div id="report-bet-details" class="bg-gray-800 rounded-xl overflow-hidden">
-      <div class="p-4 border-b border-gray-700">
-        <div class="flex flex-wrap gap-4 items-end mb-3">
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">开始日期</label>
-            <input type="date" id="trans-start" value="${dayjs().subtract(7, 'day').format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+      <!-- 查询栏 -->
+      <div class="bg-gradient-to-r from-gray-750 to-gray-800 px-4 py-4 border-b border-gray-700">
+        <div class="flex flex-wrap gap-3 items-end">
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">开始日期</label>
+            <input type="date" id="trans-start" value="${dayjs().subtract(7, 'day').format('YYYY-MM-DD')}" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
           </div>
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">结束日期</label>
-            <input type="date" id="trans-end" value="${dayjs().format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">结束日期</label>
+            <input type="date" id="trans-end" value="${dayjs().format('YYYY-MM-DD')}" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
           </div>
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">注单号</label>
-            <input type="text" id="bet-detail-no" placeholder="输入注单号" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm w-40">
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">注单号</label>
+            <input type="text" id="bet-detail-no" placeholder="请输入注单号" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all placeholder-gray-500">
           </div>
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">玩家ID/用户名</label>
-            <input type="text" id="bet-detail-player" placeholder="玩家ID或用户名" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm w-40">
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">玩家ID/用户名</label>
+            <input type="text" id="bet-detail-player" placeholder="玩家ID或用户名" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all placeholder-gray-500">
           </div>
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">游戏类型</label>
-            <select id="bet-detail-game" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm w-32">
+          <div class="flex-1 min-w-[120px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">游戏类型</label>
+            <select id="bet-detail-game" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
               <option value="">全部游戏</option>
               <option value="baccarat">百家乐</option>
               <option value="roulette">轮盘</option>
@@ -6197,21 +6198,26 @@ async function renderReports(container) {
               <option value="blackjack">21点</option>
             </select>
           </div>
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">注单状态</label>
-            <select id="bet-detail-status" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm w-28">
+          <div class="flex-1 min-w-[120px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">注单状态</label>
+            <select id="bet-detail-status" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
               <option value="">全部状态</option>
               <option value="0">未结算</option>
               <option value="1">已结算</option>
               <option value="3">已作废</option>
             </select>
           </div>
-          <button onclick="loadBetDetails()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded text-sm">
-            <i class="fas fa-search mr-2"></i>查询
-          </button>
-          <button onclick="exportBetDetails()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-sm">
-            <i class="fas fa-download mr-2"></i>导出
-          </button>
+          <div class="flex gap-2">
+            <button onclick="loadBetDetails()" class="bg-red-600 hover:bg-red-700 px-6 py-2 rounded text-sm font-medium transition-all shadow-lg hover:shadow-xl">
+              <i class="fas fa-search mr-1.5"></i>查询
+            </button>
+            <button onclick="exportBetDetails()" class="bg-green-600 hover:bg-green-700 px-5 py-2 rounded text-sm transition-all shadow-lg hover:shadow-xl">
+              <i class="fas fa-download mr-1.5"></i>导出
+            </button>
+            <button onclick="document.getElementById('trans-start').value=dayjs().subtract(7,'day').format('YYYY-MM-DD');document.getElementById('trans-end').value=dayjs().format('YYYY-MM-DD');document.getElementById('bet-detail-no').value='';document.getElementById('bet-detail-player').value='';document.getElementById('bet-detail-game').value='';document.getElementById('bet-detail-status').value='';" class="bg-gray-600 hover:bg-gray-700 px-5 py-2 rounded text-sm transition-all">
+              <i class="fas fa-redo mr-1.5"></i>重置
+            </button>
+          </div>
         </div>
       </div>
       <div class="overflow-x-auto">
@@ -6241,34 +6247,34 @@ async function renderReports(container) {
 
     <!-- 3. 盈利分成（原综合报表） -->
     <div id="report-profit-share" class="hidden bg-gray-800 rounded-xl overflow-hidden">
-      <div class="p-4 border-b border-gray-700">
-        <div class="flex flex-wrap gap-4 items-end mb-3">
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">开始日期</label>
-            <input type="date" id="comp-start" value="${dayjs().subtract(30, 'day').format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+      <div class="bg-gradient-to-r from-gray-750 to-gray-800 px-4 py-4 border-b border-gray-700">
+        <div class="flex flex-wrap gap-3 items-end">
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">开始日期</label>
+            <input type="date" id="comp-start" value="${dayjs().subtract(30, 'day').format('YYYY-MM-DD')}" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
           </div>
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">结束日期</label>
-            <input type="date" id="comp-end" value="${dayjs().format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">结束日期</label>
+            <input type="date" id="comp-end" value="${dayjs().format('YYYY-MM-DD')}" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
           </div>
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">分组维度</label>
-            <select id="comp-group" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm w-32">
+          <div class="flex-1 min-w-[120px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">分组维度</label>
+            <select id="comp-group" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
               <option value="date">按日期</option>
               <option value="agent">按代理</option>
               <option value="game">按游戏</option>
             </select>
           </div>
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">代理筛选</label>
-            <select id="comp-agent" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm w-40">
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">代理筛选</label>
+            <select id="comp-agent" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
               <option value="">全部代理</option>
               ${agents.map(a => `<option value="${a.id}">${escapeHtml(a.agent_username)}</option>`).join('')}
             </select>
           </div>
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">游戏类型</label>
-            <select id="comp-game" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm w-32">
+          <div class="flex-1 min-w-[120px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">游戏类型</label>
+            <select id="comp-game" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
               <option value="">全部游戏</option>
               <option value="baccarat">百家乐</option>
               <option value="roulette">轮盘</option>
@@ -6277,12 +6283,14 @@ async function renderReports(container) {
               <option value="blackjack">21点</option>
             </select>
           </div>
-          <button onclick="loadComprehensive()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded text-sm">
-            <i class="fas fa-chart-bar mr-2"></i>生成报表
-          </button>
-          <button onclick="exportComprehensive()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-sm">
-            <i class="fas fa-download mr-2"></i>导出
-          </button>
+          <div class="flex gap-2">
+            <button onclick="loadComprehensive()" class="bg-red-600 hover:bg-red-700 px-6 py-2 rounded text-sm font-medium transition-all shadow-lg hover:shadow-xl">
+              <i class="fas fa-search mr-1.5"></i>查询
+            </button>
+            <button onclick="exportComprehensive()" class="bg-green-600 hover:bg-green-700 px-5 py-2 rounded text-sm transition-all shadow-lg hover:shadow-xl">
+              <i class="fas fa-download mr-1.5"></i>导出
+            </button>
+          </div>
         </div>
       </div>
       <div class="overflow-x-auto">
@@ -6308,26 +6316,26 @@ async function renderReports(container) {
 
     <!-- 3. 玩家排名 -->
     <div id="report-ranking" class="hidden bg-gray-800 rounded-xl overflow-hidden">
-      <div class="p-4 border-b border-gray-700">
-        <div class="flex flex-wrap gap-4 items-end mb-3">
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">开始日期</label>
-            <input type="date" id="rank-start" value="${dayjs().subtract(7, 'day').format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+      <div class="bg-gradient-to-r from-gray-750 to-gray-800 px-4 py-4 border-b border-gray-700">
+        <div class="flex flex-wrap gap-3 items-end">
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">开始日期</label>
+            <input type="date" id="rank-start" value="${dayjs().subtract(7, 'day').format('YYYY-MM-DD')}" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
           </div>
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">结束日期</label>
-            <input type="date" id="rank-end" value="${dayjs().format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">结束日期</label>
+            <input type="date" id="rank-end" value="${dayjs().format('YYYY-MM-DD')}" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
           </div>
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">代理筛选</label>
-            <select id="rank-agent" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm w-40">
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">代理筛选</label>
+            <select id="rank-agent" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
               <option value="">全部代理</option>
               ${agents.map(a => `<option value="${a.id}">${escapeHtml(a.agent_username)}</option>`).join('')}
             </select>
           </div>
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">VIP等级</label>
-            <select id="rank-vip" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm w-32">
+          <div class="flex-1 min-w-[120px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">VIP等级</label>
+            <select id="rank-vip" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
               <option value="">全部等级</option>
               <option value="0">VIP0</option>
               <option value="1">VIP1</option>
@@ -6338,18 +6346,20 @@ async function renderReports(container) {
               <option value="6">VIP6</option>
             </select>
           </div>
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">显示数量</label>
-            <select id="rank-limit" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm w-24">
+          <div class="flex-1 min-w-[100px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">显示数量</label>
+            <select id="rank-limit" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
               <option value="10">TOP10</option>
               <option value="20">TOP20</option>
               <option value="50">TOP50</option>
               <option value="100">TOP100</option>
             </select>
           </div>
-          <button onclick="loadRanking()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded text-sm">
-            <i class="fas fa-trophy mr-2"></i>查看排名
-          </button>
+          <div>
+            <button onclick="loadRanking()" class="bg-red-600 hover:bg-red-700 px-6 py-2 rounded text-sm font-medium transition-all shadow-lg hover:shadow-xl">
+              <i class="fas fa-search mr-1.5"></i>查询
+            </button>
+          </div>
         </div>
       </div>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4">
@@ -6366,16 +6376,22 @@ async function renderReports(container) {
 
     <!-- 6. 盈亏日报（原每日盈亏汇总） -->
     <div id="report-daily-report" class="hidden bg-gray-800 rounded-xl overflow-hidden">
-      <div class="p-4 border-b border-gray-700 flex flex-wrap gap-4 items-end">
-        <div>
-          <label class="text-gray-400 text-xs block mb-1">开始日期</label>
-          <input type="date" id="summary-start" value="${dayjs().subtract(30, 'day').format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+      <div class="bg-gradient-to-r from-gray-750 to-gray-800 px-4 py-4 border-b border-gray-700">
+        <div class="flex flex-wrap gap-3 items-end">
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">开始日期</label>
+            <input type="date" id="summary-start" value="${dayjs().subtract(30, 'day').format('YYYY-MM-DD')}" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
+          </div>
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">结束日期</label>
+            <input type="date" id="summary-end" value="${dayjs().format('YYYY-MM-DD')}" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
+          </div>
+          <div>
+            <button onclick="loadDailySummary()" class="bg-red-600 hover:bg-red-700 px-6 py-2 rounded text-sm font-medium transition-all shadow-lg hover:shadow-xl">
+              <i class="fas fa-search mr-1.5"></i>查询
+            </button>
+          </div>
         </div>
-        <div>
-          <label class="text-gray-400 text-xs block mb-1">结束日期</label>
-          <input type="date" id="summary-end" value="${dayjs().format('YYYY-MM-DD')}" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
-        </div>
-        <button onclick="loadDailySummary()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded text-sm"><i class="fas fa-calendar-check mr-2"></i>查询</button>
       </div>
       <!-- 汇总卡片 -->
       <div id="summary-cards" class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border-b border-gray-700"></div>
@@ -6797,33 +6813,31 @@ async function renderReports(container) {
     <!-- 8. 转账记录 -->
     <div id="report-transfers" class="hidden bg-gray-800 rounded-xl overflow-hidden">
       <!-- 查询条件区域 -->
-      <div class="p-4 border-b border-gray-700">
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-3">
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">开始日期</label>
-            <input type="date" id="search-transfer-start" value="${dayjs().subtract(7, 'day').format('YYYY-MM-DD')}" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
-          </div>
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">结束日期</label>
-            <input type="date" id="search-transfer-end" value="${dayjs().format('YYYY-MM-DD')}" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
-          </div>
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">转账订单号</label>
-            <input type="text" id="search-transfer-id" placeholder="输入订单号" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
-          </div>
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">转出会员</label>
-            <input type="text" id="search-from-player" placeholder="账号/ID" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
-          </div>
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">转入会员</label>
-            <input type="text" id="search-to-player" placeholder="账号/ID" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
-          </div>
-        </div>
+      <div class="bg-gradient-to-r from-gray-750 to-gray-800 px-4 py-4 border-b border-gray-700">
         <div class="flex flex-wrap gap-3 items-end">
-          <div>
-            <label class="text-gray-400 text-xs block mb-1">转账状态</label>
-            <select id="search-transfer-status" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">开始日期</label>
+            <input type="date" id="search-transfer-start" value="${dayjs().subtract(7, 'day').format('YYYY-MM-DD')}" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
+          </div>
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">结束日期</label>
+            <input type="date" id="search-transfer-end" value="${dayjs().format('YYYY-MM-DD')}" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
+          </div>
+          <div class="flex-1 min-w-[140px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">转账订单号</label>
+            <input type="text" id="search-transfer-id" placeholder="输入订单号" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all placeholder-gray-500">
+          </div>
+          <div class="flex-1 min-w-[130px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">转出会员</label>
+            <input type="text" id="search-from-player" placeholder="账号/ID" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all placeholder-gray-500">
+          </div>
+          <div class="flex-1 min-w-[130px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">转入会员</label>
+            <input type="text" id="search-to-player" placeholder="账号/ID" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all placeholder-gray-500">
+          </div>
+          <div class="flex-1 min-w-[120px]">
+            <label class="text-gray-300 text-xs block mb-1.5 font-medium">转账状态</label>
+            <select id="search-transfer-status" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all">
               <option value="">全部状态</option>
               <option value="pending">待处理</option>
               <option value="approved">已批准</option>
@@ -6832,12 +6846,14 @@ async function renderReports(container) {
               <option value="cancelled">已取消</option>
             </select>
           </div>
-          <button onclick="loadTransferRecords()" class="bg-primary hover:bg-blue-700 px-5 py-2 rounded text-sm">
-            <i class="fas fa-search mr-2"></i>查询
-          </button>
-          <button onclick="exportReport('transfers')" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-sm">
-            <i class="fas fa-file-excel mr-1"></i>导出
-          </button>
+          <div class="flex gap-2">
+            <button onclick="loadTransferRecords()" class="bg-red-600 hover:bg-red-700 px-6 py-2 rounded text-sm font-medium transition-all shadow-lg hover:shadow-xl">
+              <i class="fas fa-search mr-1.5"></i>查询
+            </button>
+            <button onclick="exportReport('transfers')" class="bg-green-600 hover:bg-green-700 px-5 py-2 rounded text-sm transition-all shadow-lg hover:shadow-xl">
+              <i class="fas fa-download mr-1.5"></i>导出
+            </button>
+          </div>
         </div>
       </div>
       
