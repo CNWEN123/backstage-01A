@@ -4481,7 +4481,7 @@ async function renderCommission(container) {
                 <td class="p-4 font-mono text-green-400">${formatCurrency(r.amount)}</td>
                 <td class="p-4">${getStatusBadge(r.status)}</td>
                 <td class="p-4">
-                  <button onclick="approveCommission(${r.id})" class="text-green-400 hover:text-green-300 mr-2" title="通过"><i class="fas fa-check"></i></button>
+                  <button onclick="approveCommission(${r.id}, ${r.amount})" class="text-green-400 hover:text-green-300 mr-2" title="通过"><i class="fas fa-check"></i></button>
                   <button onclick="rejectCommission(${r.id})" class="text-red-400 hover:text-red-300" title="拒绝"><i class="fas fa-times"></i></button>
                 </td>
               </tr>
@@ -6236,22 +6236,41 @@ async function deleteTurnoverSetting(id, name) {
   }
 }
 
-async function approveCommission(id) {
+async function approveCommission(id, amount) {
+  // 验证财务密码后再审批洗码结算
+  const verified = await verifyFinancePassword('commission_approval', amount || 0);
+  if (!verified) {
+    return; // 验证失败，不执行操作
+  }
+
   const result = await api(`/api/commission/records/${id}`, {
     method: 'PUT',
     body: JSON.stringify({ status: 'approved', reviewer_id: currentUser?.id })
   });
-  if (result.success) loadModule('commission');
-  else alert(result.error);
+  if (result.success) {
+    showSuccess('洗码结算审批通过');
+    loadModule('commission');
+  } else {
+    alert(result.error);
+  }
 }
 
 async function rejectCommission(id) {
+  // 拒绝操作需要确认，但不需要财务密码验证
+  if (!confirm('确认拒绝该笔洗码结算？')) {
+    return;
+  }
+
   const result = await api(`/api/commission/records/${id}`, {
     method: 'PUT',
     body: JSON.stringify({ status: 'rejected', reviewer_id: currentUser?.id })
   });
-  if (result.success) loadModule('commission');
-  else alert(result.error);
+  if (result.success) {
+    showSuccess('洗码结算已拒绝');
+    loadModule('commission');
+  } else {
+    alert(result.error);
+  }
 }
 
 // =====================
