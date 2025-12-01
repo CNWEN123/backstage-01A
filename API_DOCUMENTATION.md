@@ -2,9 +2,12 @@
 
 ## 基础信息
 
-- **Base URL**: `https://your-domain.pages.dev`
+- **Base URL**: `https://webapp-eqp.pages.dev`
+- **生产环境**: https://webapp-eqp.pages.dev
+- **沙箱环境**: https://3000-iuwuqi7rz0v5niuhr74wf-cc2fbc16.sandbox.novita.ai
 - **数据格式**: JSON
 - **字符编码**: UTF-8
+- 📧 **获取访问账号**: cnwen123@gmail.com
 
 ---
 
