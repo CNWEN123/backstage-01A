@@ -18,7 +18,7 @@ app.use('/static/*', serveStatic())
 // 安全工具函数
 // ========================================
 
-// 密码哈希函数 (使用 Web Crypto API)
+// 密码哈希函数 (使用 Web Crypto API, 带盐)
 const hashPassword = async (password: string): Promise<string> => {
   const encoder = new TextEncoder()
   const data = encoder.encode(password + 'live_dealer_salt_2024')
@@ -27,10 +27,25 @@ const hashPassword = async (password: string): Promise<string> => {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
-// 验证密码
+// 无盐哈希函数 (用于向后兼容旧数据)
+const hashPasswordNoSalt = async (password: string): Promise<string> => {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(password)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+// 验证密码 (支持带盐和不带盐两种方式)
 const verifyPassword = async (password: string, hash: string): Promise<boolean> => {
-  const passwordHash = await hashPassword(password)
-  return passwordHash === hash
+  // 尝试带盐哈希
+  const passwordHashWithSalt = await hashPassword(password)
+  if (passwordHashWithSalt === hash) {
+    return true
+  }
+  // 尝试无盐哈希 (向后兼容)
+  const passwordHashNoSalt = await hashPasswordNoSalt(password)
+  return passwordHashNoSalt === hash
 }
 
 // 输入验证工具
@@ -6557,9 +6572,8 @@ app.post('/api/auth/login', async (c) => {
       return c.json({ success: false, error: '登录失败次数过多，账号已被临时锁定，请30分钟后重试或联系管理员' }, 403)
     }
     
-    // 验证密码 - 支持哈希密码和旧版明文密码（向后兼容）
-    const passwordHash = await hashPassword(password)
-    const isPasswordValid = admin.password_hash === passwordHash || admin.password_hash === password
+    // 验证密码 - 支持哈希密码(带盐/不带盐)和旧版明文密码(向后兼容)
+    const isPasswordValid = await verifyPassword(password, admin.password_hash) || admin.password_hash === password
     
     if (!isPasswordValid) {
       // 记录失败次数
@@ -8565,7 +8579,10 @@ app.get('*', (c) => {
 // 股东/代理登录
 app.post('/api/agent/login', async (c) => {
   const db = c.env.DB
-  const { agent_username, password } = await c.req.json()
+  const body = await c.req.json()
+  // 支持 username 或 agent_username 字段
+  const username = body.username || body.agent_username
+  const password = body.password
   
   try {
     // 查询代理账号
@@ -8573,20 +8590,19 @@ app.post('/api/agent/login', async (c) => {
       SELECT id, agent_username, nickname, level, status, parent_agent_id, contact_phone, commission_ratio, password_hash
       FROM agents 
       WHERE agent_username = ?
-    `).bind(agent_username).first() as any
+    `).bind(username).first() as any
     
     if (!agent) {
       return c.json({ success: false, error: '账号或密码错误' }, 401)
     }
     
-    // 验证密码（简化版 - 测试环境）
-    // 支持明文密码比较或bcrypt验证
+    // 验证密码（支持 SHA-256 哈希）
     let passwordMatch = false
     if (agent.password_hash === password) {
-      // 明文密码匹配
+      // 明文密码匹配（测试环境）
       passwordMatch = true
     } else {
-      // 尝试bcrypt验证
+      // SHA-256 哈希验证
       try {
         passwordMatch = await verifyPassword(password, agent.password_hash)
       } catch (e) {
