@@ -99,10 +99,9 @@ wrangler pages deploy dist --project-name webapp
 系统总管理后台: https://xxxx.webapp.pages.dev/
 代理管理后台: https://xxxx.webapp.pages.dev/agent.html
 
-默认账号:
-- 系统管理员: admin / admin123
-- 股东账号: shareholder01 / test123
-- 代理账号: agent01 / test123
+账号访问:
+- ⚠️ 请联系管理员获取访问账号和密码
+- 部署后请立即创建管理员账号并设置强密码
 ```
 
 ---

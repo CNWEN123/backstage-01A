@@ -33,8 +33,8 @@ POST /api/auth/login
 **请求参数**:
 ```json
 {
-  "username": "admin",
-  "password": "admin123"
+  "username": "your_username",
+  "password": "your_password"
 }
 ```
 
@@ -559,8 +559,8 @@ POST /api/agent/login
 **请求参数**:
 ```json
 {
-  "username": "agent001",
-  "password": "test123"
+  "username": "your_agent_username",
+  "password": "your_password"
 }
 ```
 
